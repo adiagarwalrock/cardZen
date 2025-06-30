@@ -6,7 +6,6 @@ import {
   Trash2,
   ShieldCheck,
 } from 'lucide-react';
-import { format } from 'date-fns';
 import Image from 'next/image';
 
 import { CreditCard } from '@/lib/types';
@@ -26,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useSafeSpend } from '@/hooks/use-safe-spend';
+import { getOrdinal } from '@/lib/utils';
 
 interface CreditCardListItemProps {
   card: CreditCard;
@@ -90,7 +90,7 @@ export function CreditCardListItem({ card, onEdit, onDelete }: CreditCardListIte
             </div>
             <div>
                 <p className="text-muted-foreground text-xs">Due Date</p>
-                <p className="font-medium">{format(new Date(card.dueDate), 'MMM dd')}</p>
+                <p className="font-medium">{getOrdinal(card.dueDate)} of month</p>
             </div>
             <div>
                 <p className="text-muted-foreground text-xs">Annual Fee</p>

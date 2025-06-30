@@ -3,8 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle, Search, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { PlusCircle, Search, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,11 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { CreditCard } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomLists } from '@/hooks/use-custom-lists';
 import { Separator } from './ui/separator';
@@ -42,8 +38,8 @@ const cardFormSchema = z.object({
   currency: z.string().min(2, 'Currency is required.'),
   annualFee: z.coerce.number().min(0, 'Fee must be a positive number.').default(0),
   apr: z.coerce.number().min(0, 'APR must be a positive number.').max(100, 'APR seems too high.').default(0),
-  dueDate: z.date({ required_error: 'A due date is required.' }),
-  statementDate: z.date({ required_error: 'A statement date is required.' }),
+  dueDate: z.coerce.number().min(1, 'Day is required.').max(31, 'Invalid day.'),
+  statementDate: z.coerce.number().min(1, 'Day is required.').max(31, 'Invalid day.'),
   enableAlerts: z.boolean().default(true),
   perks: z.array(z.string()).default([]),
   benefits: z.array(
@@ -79,8 +75,8 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
       currency: card?.currency || 'USD',
       annualFee: card?.annualFee || 0,
       apr: card?.apr || 0,
-      dueDate: card?.dueDate ? new Date(card.dueDate) : undefined,
-      statementDate: card?.statementDate ? new Date(card.statementDate) : undefined,
+      dueDate: card?.dueDate,
+      statementDate: card?.statementDate,
       enableAlerts: card?.enableAlerts ?? true,
       perks: card?.perks || [],
       benefits: card?.benefits || [],
@@ -105,8 +101,6 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     const saveData = {
         ...data,
         imageUrl: data.imageUrl || undefined,
-        dueDate: data.dueDate.toISOString(),
-        statementDate: data.statementDate.toISOString(),
     }
     await onSave(saveData);
     toast({
@@ -264,37 +258,20 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             control={form.control}
             name="dueDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Due Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
+              <FormItem>
+                <FormLabel>Due Day of Month</FormLabel>
+                 <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
                     <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP')
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
                     </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date('1990-01-01')}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                    <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                        ))}
+                    </SelectContent>
+                 </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -303,37 +280,20 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             control={form.control}
             name="statementDate"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Statement Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
+              <FormItem>
+                <FormLabel>Statement Day of Month</FormLabel>
+                 <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
                     <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP')
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
                     </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date('1990-01-01')}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                    <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                        ))}
+                    </SelectContent>
+                 </Select>
                 <FormMessage />
               </FormItem>
             )}

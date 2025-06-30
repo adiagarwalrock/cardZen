@@ -12,8 +12,8 @@ export interface CreditCard {
   cardName: string;
   benefits: Benefit[];
   perks: string[];
-  dueDate: string;
-  statementDate: string;
+  dueDate: number;
+  statementDate: number;
   limit: number;
   currency: string;
   annualFee: number;

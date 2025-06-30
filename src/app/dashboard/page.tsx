@@ -34,6 +34,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
+  actualDueDate: Date;
 }
 
 export default function DashboardPage() {
@@ -53,23 +54,47 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!cards || !alertSettingsLoaded) return;
 
+    const getNextDateForDay = (day: number): Date => {
+      const today = startOfDay(new Date());
+      const year = today.getFullYear();
+      const month = today.getMonth();
+
+      let potentialDueDate = new Date(year, month, day);
+      if (potentialDueDate.getMonth() !== month) {
+        potentialDueDate = new Date(year, month + 1, 0);
+      }
+      
+      if (isAfter(today, potentialDueDate)) {
+        const nextMonth = new Date(year, month + 1, 1);
+        let nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), day);
+        if (nextMonthDueDate.getMonth() !== nextMonth.getMonth()) {
+            nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
+        }
+        return nextMonthDueDate;
+      } else {
+        return potentialDueDate;
+      }
+    }
+
     const today = startOfDay(new Date());
 
     const payments = cards
-      .filter(card => {
-        if (!card.enableAlerts) return false;
-        const dueDate = startOfDay(new Date(card.dueDate));
-        const daysRemaining = differenceInDays(dueDate, today);
-        return isAfter(dueDate, today) && daysRemaining <= alertDays;
-      })
+      .filter(card => card.enableAlerts && card.dueDate)
       .map(card => {
-        const dueDate = startOfDay(new Date(card.dueDate));
-        return {
-          ...card,
-          daysRemaining: differenceInDays(dueDate, today),
-        };
+        const nextDueDate = getNextDateForDay(card.dueDate);
+        const daysRemaining = differenceInDays(nextDueDate, today);
+        
+        if (daysRemaining >= 0 && daysRemaining <= alertDays) {
+          return {
+            ...card,
+            daysRemaining: daysRemaining,
+            actualDueDate: nextDueDate,
+          };
+        }
+        return null;
       })
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      .filter((p): p is UpcomingPayment => p !== null)
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
       
     setUpcomingPayments(payments);
   }, [cards, alertDays, alertSettingsLoaded]);
@@ -77,18 +102,22 @@ export default function DashboardPage() {
   useEffect(() => {
     if (userLoaded) {
       const hour = new Date().getHours();
-      let emoji = '';
+      let timeOfDay = 'Hello';
+      let emoji = '👋';
 
       if (hour < 12) {
+        timeOfDay = 'Good morning';
         emoji = '☀️';
       } else if (hour < 18) {
+        timeOfDay = 'Good afternoon';
         emoji = '👋';
       } else {
+        timeOfDay = 'Good evening';
         emoji = '🌙';
       }
       
       const namePart = userName ? `, ${userName}` : '';
-      setGreeting(`Hello${namePart}! ${emoji}`);
+      setGreeting(`${timeOfDay}${namePart}! ${emoji}`);
     }
   }, [userName, userLoaded]);
 
@@ -124,7 +153,7 @@ export default function DashboardPage() {
       )
       .sort((a, b) => {
         if (sortBy === 'dueDate') {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return a.dueDate - b.dueDate;
         }
         if (sortBy === 'limit') {
           return b.limit - a.limit;
@@ -189,7 +218,7 @@ export default function DashboardPage() {
                         <Bell className="h-4 w-4" />
                         <AlertTitle>Due Soon: {card.cardName}</AlertTitle>
                         <AlertDescription>
-                            Payment is due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} on {format(new Date(card.dueDate), 'PPP')}.
+                            Payment is due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} on {format(card.actualDueDate, 'PPP')}.
                         </AlertDescription>
                     </Alert>
                 )

@@ -13,7 +13,19 @@ export function useCreditCards() {
     try {
       const storedItems = localStorage.getItem(STORAGE_KEY);
       if (storedItems) {
-        setCards(JSON.parse(storedItems));
+        const parsedItems = JSON.parse(storedItems);
+        // Simple migration for old data structure
+        const migratedCards = parsedItems.map((card: any) => {
+          const newCard = { ...card };
+          if (typeof card.dueDate === 'string' && card.dueDate) {
+            newCard.dueDate = new Date(card.dueDate).getDate();
+          }
+          if (typeof card.statementDate === 'string' && card.statementDate) {
+            newCard.statementDate = new Date(card.statementDate).getDate();
+          }
+          return newCard;
+        });
+        setCards(migratedCards);
       }
     } catch (error) {
       console.error('Failed to load cards from localStorage', error);

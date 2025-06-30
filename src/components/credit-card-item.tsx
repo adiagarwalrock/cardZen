@@ -13,7 +13,6 @@ import {
   Trash2,
   ShieldCheck,
 } from 'lucide-react';
-import { format } from 'date-fns';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
@@ -41,6 +40,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Separator } from './ui/separator';
 import { useSafeSpend } from '@/hooks/use-safe-spend';
+import { getOrdinal } from '@/lib/utils';
 
 interface CreditCardItemProps {
   card: CreditCard;
@@ -60,9 +60,9 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
   const [isPastDue, setIsPastDue] = useState(false);
 
   useEffect(() => {
+    // A simple check: if today's date is past the due day number for this month.
     const today = new Date();
-    const nextDueDate = new Date(card.dueDate);
-    setIsPastDue(nextDueDate < today);
+    setIsPastDue(today.getDate() > card.dueDate);
   }, [card.dueDate]);
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -132,12 +132,12 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="mr-2 h-4 w-4" />
-                <span>Statement on {format(new Date(card.statementDate), 'do')} of month</span>
+                <span>Statement on {getOrdinal(card.statementDate)} of month</span>
             </div>
              <div className="flex items-center text-sm">
                 <AlarmClock className="mr-2 h-4 w-4" />
                 <span className={isPastDue ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
-                    Due on {format(new Date(card.dueDate), 'PPP')}
+                    Due on the {getOrdinal(card.dueDate)} of each month
                 </span>
             </div>
         </div>
