@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
+  BarChart,
   LayoutDashboard,
   Lightbulb,
   Settings,
@@ -15,6 +16,7 @@ import { Logo } from '@/components/logo';
 
 const navItems = [
   { href: '/dashboard', label: 'My Cards', icon: LayoutDashboard },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
   { href: '/dashboard/recommend', label: 'Smart Recommend', icon: Lightbulb },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -38,7 +40,7 @@ export default function DashboardLayout({
               <li key={item.href}>
                 <Button
                   asChild
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
+                  variant={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard') ? 'secondary' : 'ghost'}
                   className="w-full justify-start"
                 >
                   <Link href={item.href}>

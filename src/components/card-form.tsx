@@ -29,10 +29,11 @@ import { Switch } from '@/components/ui/switch';
 import { CreditCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomLists } from '@/hooks/use-custom-lists';
 
 const cardFormSchema = z.object({
-  provider: z.string().min(2, 'Provider is required.'),
-  network: z.string().min(2, 'Network is required.'),
+  provider: z.string().min(1, 'Provider is required.'),
+  network: z.string().min(1, 'Network is required.'),
   cardName: z.string().min(2, 'Card name is required.'),
   imageUrl: z.string().url('Please enter a valid image URL.').optional().or(z.literal('')),
   limit: z.coerce.number().min(0, 'Limit must be a positive number.'),
@@ -60,6 +61,8 @@ interface CardFormProps {
 
 export function CardForm({ card, onSave, onDone }: CardFormProps) {
   const { toast } = useToast();
+  const { providers, networks } = useCustomLists();
+
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
     defaultValues: {
@@ -128,9 +131,18 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Provider</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Chase" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a provider" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {providers.map((p) => (
+                      <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -141,9 +153,18 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Network</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Visa" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a network" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {networks.map((n) => (
+                      <SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

@@ -24,3 +24,8 @@ export interface SpendingHabit {
   category: string;
   amount: number;
 }
+
+export interface CustomListItem {
+  id: string;
+  name: string;
+}
