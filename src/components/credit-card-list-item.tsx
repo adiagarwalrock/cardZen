@@ -4,7 +4,6 @@ import {
   CreditCard as CreditCardIcon,
   Pencil,
   Trash2,
-  ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -79,12 +78,12 @@ export function CreditCardListItem({ card, onEdit, onDelete }: CreditCardListIte
           </div>
         </div>
 
-        <div className="hidden lg:flex items-center gap-x-6 text-sm text-center">
+        <div className="hidden md:flex items-center gap-x-6 text-sm text-center">
             <div>
                 <p className="text-muted-foreground text-xs">Limit</p>
                 <p className="font-medium">{formattedLimit}</p>
             </div>
-            <div>
+            <div className="hidden lg:block">
                 <p className="text-muted-foreground text-xs">Safe Spend</p>
                 <p className="font-medium">{safeSpendTarget}</p>
             </div>
@@ -92,7 +91,7 @@ export function CreditCardListItem({ card, onEdit, onDelete }: CreditCardListIte
                 <p className="text-muted-foreground text-xs">Due Date</p>
                 <p className="font-medium">{getOrdinal(card.dueDate)} of month</p>
             </div>
-            <div>
+            <div className="hidden lg:block">
                 <p className="text-muted-foreground text-xs">Annual Fee</p>
                 <p className="font-medium">{formattedAnnualFee}</p>
             </div>
