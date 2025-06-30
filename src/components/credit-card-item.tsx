@@ -1,0 +1,137 @@
+'use client';
+
+import {
+  AlarmClock,
+  Banknote,
+  CalendarDays,
+  CircleDollarSign,
+  CreditCard as CreditCardIcon,
+  Pencil,
+  Star,
+  Trash2,
+} from 'lucide-react';
+import { format } from 'date-fns';
+
+import { CreditCard, Benefit } from '@/lib/types';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Separator } from './ui/separator';
+
+interface CreditCardItemProps {
+  card: CreditCard;
+  onEdit: (card: CreditCard) => void;
+  onDelete: (cardId: string) => void;
+}
+
+const BenefitIcon = ({ type }: { type: Benefit['type'] }) => {
+  if (type === 'cashback') {
+    return <Banknote className="h-4 w-4 text-green-500" />;
+  }
+  return <Star className="h-4 w-4 text-yellow-500" />;
+};
+
+export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) {
+  const nextDueDate = new Date(card.dueDate);
+  const today = new Date();
+  const isPastDue = nextDueDate < today;
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle>{card.cardName}</CardTitle>
+                <CardDescription>
+                {card.provider} &middot; {card.network}
+                </CardDescription>
+            </div>
+            <CreditCardIcon className="h-8 w-8 text-muted-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow space-y-4">
+        <div className="space-y-2">
+            <h4 className="font-semibold text-sm">Key Info</h4>
+            <div className="flex items-center text-sm text-muted-foreground">
+                <CircleDollarSign className="mr-2 h-4 w-4" />
+                <span>Limit: ${card.limit.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+                <CalendarDays className="mr-2 h-4 w-4" />
+                <span>Statement on {format(new Date(card.statementDate), 'do')} of month</span>
+            </div>
+             <div className="flex items-center text-sm">
+                <AlarmClock className="mr-2 h-4 w-4" />
+                <span className={isPastDue ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
+                    Due on {format(new Date(card.dueDate), 'PPP')}
+                </span>
+            </div>
+        </div>
+        <Separator/>
+        <div className="space-y-2">
+            <h4 className="font-semibold text-sm">Benefits</h4>
+            <div className="flex flex-wrap gap-2">
+            {card.benefits.length > 0 ? (
+                card.benefits.map((benefit) => (
+                <Badge key={benefit.id} variant="secondary" className="flex items-center gap-1">
+                    <BenefitIcon type={benefit.type} />
+                    <span>{benefit.name}: {benefit.value}{benefit.type === 'cashback' ? '%' : 'x'}</span>
+                </Badge>
+                ))
+            ) : (
+                <p className="text-sm text-muted-foreground">No benefits added.</p>
+            )}
+            </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-end gap-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="icon">
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete Card</span>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your
+                card "{card.cardName}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(card.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Button variant="outline" size="icon" onClick={() => onEdit(card)}>
+          <Pencil className="h-4 w-4" />
+          <span className="sr-only">Edit Card</span>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
