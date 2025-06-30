@@ -6,7 +6,7 @@ export interface Benefit {
 }
 
 export interface CreditCard {
-  id: string;
+  id:string;
   provider: string;
   network: string;
   cardName: string;
@@ -14,6 +14,8 @@ export interface CreditCard {
   dueDate: string;
   statementDate: string;
   limit: number;
+  currency: string;
+  imageUrl?: string;
   enableAlerts: boolean;
 }
 

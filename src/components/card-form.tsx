@@ -35,6 +35,7 @@ const cardFormSchema = z.object({
   network: z.string().min(2, 'Network is required.'),
   cardName: z.string().min(2, 'Card name is required.'),
   limit: z.coerce.number().min(0, 'Limit must be a positive number.'),
+  currency: z.string().min(2, 'Currency is required.'),
   dueDate: z.date({ required_error: 'A due date is required.' }),
   statementDate: z.date({ required_error: 'A statement date is required.' }),
   enableAlerts: z.boolean().default(true),
@@ -52,7 +53,7 @@ type CardFormValues = z.infer<typeof cardFormSchema>;
 
 interface CardFormProps {
   card?: CreditCard;
-  onSave: (data: Omit<CreditCard, 'id'>) => void;
+  onSave: (data: Omit<CreditCard, 'id'>) => Promise<void> | void;
   onDone: () => void;
 }
 
@@ -65,6 +66,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
       network: card?.network || '',
       cardName: card?.cardName || '',
       limit: card?.limit || 0,
+      currency: card?.currency || 'USD',
       dueDate: card?.dueDate ? new Date(card.dueDate) : undefined,
       statementDate: card?.statementDate ? new Date(card.statementDate) : undefined,
       enableAlerts: card?.enableAlerts ?? true,
@@ -77,8 +79,8 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     name: 'benefits',
   });
 
-  function onSubmit(data: CardFormValues) {
-    onSave({
+  async function onSubmit(data: CardFormValues) {
+    await onSave({
       ...data,
       dueDate: data.dueDate.toISOString(),
       statementDate: data.statementDate.toISOString(),
@@ -142,6 +144,29 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
                 <FormControl>
                   <Input type="number" placeholder="e.g. 10000" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Currency</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="JPY">JPY</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

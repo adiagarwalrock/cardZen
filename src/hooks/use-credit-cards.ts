@@ -31,9 +31,10 @@ export function useCreditCards() {
     }
   };
 
-  const addCard = (card: Omit<CreditCard, 'id'>) => {
-    const newCard = { ...card, id: crypto.randomUUID() };
+  const addCard = (card: Omit<CreditCard, 'id'>): CreditCard => {
+    const newCard: CreditCard = { ...card, id: crypto.randomUUID() };
     saveCards([...cards, newCard]);
+    return newCard;
   };
 
   const updateCard = (updatedCard: CreditCard) => {

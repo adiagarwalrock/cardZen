@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getCardImage } from '@/lib/actions';
 
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
@@ -44,11 +45,20 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   };
 
-  const handleSave = (data: Omit<CreditCard, 'id'>) => {
+  const handleSave = async (data: Omit<CreditCard, 'id'>) => {
     if (editingCard) {
       updateCard({ ...editingCard, ...data });
     } else {
-      addCard(data);
+      const newCard = addCard(data);
+      getCardImage({
+        provider: newCard.provider,
+        cardName: newCard.cardName,
+        network: newCard.network,
+      }).then(imageUrl => {
+        if (imageUrl) {
+          updateCard({ ...newCard, imageUrl });
+        }
+      });
     }
     setIsFormOpen(false);
   };

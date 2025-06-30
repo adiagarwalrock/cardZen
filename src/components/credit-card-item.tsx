@@ -11,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 import { CreditCard, Benefit } from '@/lib/types';
 import {
@@ -53,9 +54,36 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
   const nextDueDate = new Date(card.dueDate);
   const today = new Date();
   const isPastDue = nextDueDate < today;
+  
+  let formattedLimit = card.limit.toLocaleString();
+  try {
+    formattedLimit = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: card.currency,
+      maximumFractionDigits: 0,
+    }).format(card.limit);
+  } catch (e) {
+    // Fallback for invalid currency codes
+    formattedLimit = `${card.limit.toLocaleString()} ${card.currency}`;
+  }
+
 
   return (
     <Card className="flex flex-col">
+       <div className="relative aspect-[1.586/1] w-full bg-muted rounded-t-lg">
+        {card.imageUrl ? (
+          <Image
+            src={card.imageUrl}
+            alt={`${card.cardName} card image`}
+            fill
+            className="object-cover rounded-t-lg"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center rounded-t-lg bg-gradient-to-br from-card to-secondary">
+            <CreditCardIcon className="h-10 w-10 text-muted-foreground" />
+          </div>
+        )}
+      </div>
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -64,7 +92,6 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
                 {card.provider} &middot; {card.network}
                 </CardDescription>
             </div>
-            <CreditCardIcon className="h-8 w-8 text-muted-foreground" />
         </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
@@ -72,7 +99,7 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
             <h4 className="font-semibold text-sm">Key Info</h4>
             <div className="flex items-center text-sm text-muted-foreground">
                 <CircleDollarSign className="mr-2 h-4 w-4" />
-                <span>Limit: ${card.limit.toLocaleString()}</span>
+                <span>Limit: {formattedLimit}</span>
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="mr-2 h-4 w-4" />
