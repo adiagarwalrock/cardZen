@@ -18,6 +18,7 @@ import { useSafeSpend } from '@/hooks/use-safe-spend';
 import { Slider } from '@/components/ui/slider';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
+import { Label } from '@/components/ui/label';
 
 const settingsSchema = z.object({
   habits: z.array(
@@ -183,7 +184,7 @@ export default function SettingsPage() {
             <CardContent>
                 <div className="space-y-4">
                     <div className="space-y-2">
-                      <FormLabel htmlFor="username">Your Name</FormLabel>
+                      <Label htmlFor="username">Your Name</Label>
                       <Input 
                         id="username"
                         placeholder="Enter your name"
@@ -206,7 +207,7 @@ export default function SettingsPage() {
             <CardContent>
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <FormLabel>Alert me {currentAlertDays} {currentAlertDays === 1 ? 'day' : 'days'} before due date</FormLabel>
+                        <Label>Alert me {currentAlertDays} {currentAlertDays === 1 ? 'day' : 'days'} before due date</Label>
                         <Slider
                             value={[currentAlertDays]}
                             onValueChange={(value) => setCurrentAlertDays(value[0])}
