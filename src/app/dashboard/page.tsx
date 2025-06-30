@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Grid, List, PlusCircle } from 'lucide-react';
+import { Grid, List, PlusCircle, Bell } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { differenceInDays, isAfter, startOfDay, format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { useCreditCards } from '@/hooks/use-credit-cards';
@@ -27,9 +28,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CreditCardListItem } from '@/components/credit-card-list-item';
+import { useAlertSettings } from '@/hooks/use-alert-settings';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
+  const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +61,26 @@ export default function DashboardPage() {
   
   const handleDelete = (cardId: string) => {
     deleteCard(cardId);
+  }
+
+  const upcomingPayments = useMemo(() => {
+    if (!cards || !alertSettingsLoaded) return [];
+
+    const today = startOfDay(new Date());
+    
+    return cards.filter(card => {
+        if (!card.enableAlerts) return false;
+        const dueDate = startOfDay(new Date(card.dueDate));
+        const daysRemaining = differenceInDays(dueDate, today);
+        return isAfter(dueDate, today) && daysRemaining <= alertDays;
+    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  }, [cards, alertDays, alertSettingsLoaded]);
+
+  const getDaysRemaining = (dueDate: string) => {
+      const today = startOfDay(new Date());
+      const due = startOfDay(new Date(dueDate));
+      return differenceInDays(due, today);
   }
 
   const filteredAndSortedCards = useMemo(() => {
@@ -111,6 +135,26 @@ export default function DashboardPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+       {isLoaded && upcomingPayments.length > 0 && (
+        <div className="space-y-4">
+            <h2 className="text-xl font-semibold tracking-tight">Upcoming Payments</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+            {upcomingPayments.map(card => {
+                const daysRemaining = getDaysRemaining(card.dueDate);
+                return (
+                    <Alert key={card.id}>
+                        <Bell className="h-4 w-4" />
+                        <AlertTitle>Due Soon: {card.cardName}</AlertTitle>
+                        <AlertDescription>
+                            Payment is due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} on {format(new Date(card.dueDate), 'PPP')}.
+                        </AlertDescription>
+                    </Alert>
+                )
+            })}
+            </div>
+        </div>
+      )}
 
       {isLoaded && cards.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-4 justify-between">

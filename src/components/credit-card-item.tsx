@@ -7,11 +7,11 @@ import {
   CircleDollarSign,
   CreditCard as CreditCardIcon,
   DollarSign,
-  Landmark,
   Pencil,
   Percent,
   Star,
   Trash2,
+  ShieldCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Separator } from './ui/separator';
+import { useSafeSpend } from '@/hooks/use-safe-spend';
 
 interface CreditCardItemProps {
   card: CreditCard;
@@ -54,6 +55,7 @@ const BenefitIcon = ({ type }: { type: Benefit['type'] }) => {
 };
 
 export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) {
+  const { safeSpendPercentage } = useSafeSpend();
   const nextDueDate = new Date(card.dueDate);
   const today = new Date();
   const isPastDue = nextDueDate < today;
@@ -72,6 +74,10 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
   
   const formattedLimit = formatCurrency(card.limit, card.currency);
   const formattedAnnualFee = formatCurrency(card.annualFee, card.currency);
+  const safeSpendTarget = formatCurrency(
+    (card.limit * safeSpendPercentage) / 100,
+    card.currency
+  );
 
 
   return (
@@ -106,6 +112,10 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
             <div className="flex items-center text-sm text-muted-foreground">
                 <CircleDollarSign className="mr-2 h-4 w-4" />
                 <span>Limit: {formattedLimit}</span>
+            </div>
+             <div className="flex items-center text-sm text-muted-foreground">
+                <ShieldCheck className="mr-2 h-4 w-4 text-green-600" />
+                <span>Safe Spend: {safeSpendTarget}</span>
             </div>
              <div className="flex items-center text-sm text-muted-foreground">
                 <DollarSign className="mr-2 h-4 w-4" />

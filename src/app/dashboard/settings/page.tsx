@@ -16,6 +16,8 @@ import { useCustomLists } from '@/hooks/use-custom-lists';
 import { Badge } from '@/components/ui/badge';
 import { useSafeSpend } from '@/hooks/use-safe-spend';
 import { Slider } from '@/components/ui/slider';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { useAlertSettings } from '@/hooks/use-alert-settings';
 
 const settingsSchema = z.object({
   habits: z.array(
@@ -44,12 +46,18 @@ export default function SettingsPage() {
     networks, addNetwork, deleteNetwork,
     perks, addPerk, deletePerk
   } = useCustomLists();
+  
+  const { userName, saveUserName, isLoaded: userLoaded } = useUserProfile();
+  const { alertDays, saveAlertDays, isLoaded: alertsLoaded } = useAlertSettings();
 
   const { toast } = useToast();
   const [newProvider, setNewProvider] = useState('');
   const [newNetwork, setNewNetwork] = useState('');
   const [newPerk, setNewPerk] = useState('');
   const [spendLimit, setSpendLimit] = useState(safeSpendPercentage);
+  const [currentUserName, setCurrentUserName] = useState('');
+  const [currentAlertDays, setCurrentAlertDays] = useState(alertDays);
+  const [greeting, setGreeting] = useState('');
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -79,6 +87,33 @@ export default function SettingsPage() {
       setSpendLimit(safeSpendPercentage);
     }
   }, [safeSpendLoaded, safeSpendPercentage]);
+
+   useEffect(() => {
+    if (userLoaded) {
+      setCurrentUserName(userName);
+    }
+  }, [userLoaded, userName]);
+
+  useEffect(() => {
+    if (alertsLoaded) {
+      setCurrentAlertDays(alertDays);
+    }
+  }, [alertsLoaded, alertDays]);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    let timeOfDay = '';
+    if (hour < 12) {
+      timeOfDay = 'Good morning';
+    } else if (hour < 18) {
+      timeOfDay = 'Good afternoon';
+    } else {
+      timeOfDay = 'Good evening';
+    }
+    const namePart = userName ? `, ${userName}` : '';
+    setGreeting(`${timeOfDay}${namePart}!`);
+  }, [userName]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -116,11 +151,76 @@ export default function SettingsPage() {
     })
   }
 
+  const handleSaveProfile = () => {
+    saveUserName(currentUserName);
+    toast({
+      title: 'Profile Saved',
+      description: 'Your name has been updated.',
+    });
+  };
+
+  const handleSaveAlerts = () => {
+    saveAlertDays(currentAlertDays);
+    toast({
+      title: 'Settings Saved',
+      description: 'Your alert preferences have been updated.',
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Manage your spending habits, card providers, and networks.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
+        <p className="text-muted-foreground">Manage your settings and preferences.</p>
+      </div>
+
+       <div className="grid md:grid-cols-2 gap-8">
+        <Card>
+            <CardHeader>
+                <CardTitle>Profile</CardTitle>
+                <CardDescription>Personalize your experience.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                      <FormLabel htmlFor="username">Your Name</FormLabel>
+                      <Input 
+                        id="username"
+                        placeholder="Enter your name"
+                        value={currentUserName}
+                        onChange={(e) => setCurrentUserName(e.target.value)}
+                      />
+                    </div>
+                    <Button onClick={handleSaveProfile}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Name
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Alerts</CardTitle>
+                <CardDescription>Set your due date alert preferences.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <FormLabel>Alert me {currentAlertDays} {currentAlertDays === 1 ? 'day' : 'days'} before due date</FormLabel>
+                        <Slider
+                            value={[currentAlertDays]}
+                            onValueChange={(value) => setCurrentAlertDays(value[0])}
+                            max={30}
+                            step={1}
+                        />
+                    </div>
+                    <Button onClick={handleSaveAlerts}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Alert Settings
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
       </div>
 
       <Card>
