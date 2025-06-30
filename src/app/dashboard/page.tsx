@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getCardImage } from '@/lib/actions';
 
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
@@ -49,16 +48,7 @@ export default function DashboardPage() {
     if (editingCard) {
       updateCard({ ...editingCard, ...data });
     } else {
-      const newCard = addCard(data);
-      getCardImage({
-        provider: newCard.provider,
-        cardName: newCard.cardName,
-        network: newCard.network,
-      }).then(imageUrl => {
-        if (imageUrl) {
-          updateCard({ ...newCard, imageUrl });
-        }
-      });
+      addCard(data);
     }
     setIsFormOpen(false);
   };

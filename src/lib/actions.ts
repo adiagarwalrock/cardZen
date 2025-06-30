@@ -1,7 +1,6 @@
 'use server';
 
 import { smartCardRecommendation } from '@/ai/flows/smart-card-recommendation';
-import { generateCardImage, type GenerateCardImageInput } from '@/ai/flows/generate-card-image';
 
 export interface RecommendationState {
   recommendedCard?: string;
@@ -44,17 +43,5 @@ export async function getSmartRecommendation(
     };
   } catch (e) {
     return { error: 'An unexpected error occurred. Please try again.' };
-  }
-}
-
-export async function getCardImage(
-  input: GenerateCardImageInput
-): Promise<string | null> {
-  try {
-    const result = await generateCardImage(input);
-    return result.imageUrl;
-  } catch (e) {
-    console.error('Image generation failed:', e);
-    return null;
   }
 }

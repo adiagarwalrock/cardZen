@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Search, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ const cardFormSchema = z.object({
   provider: z.string().min(2, 'Provider is required.'),
   network: z.string().min(2, 'Network is required.'),
   cardName: z.string().min(2, 'Card name is required.'),
+  imageUrl: z.string().url('Please enter a valid image URL.').optional().or(z.literal('')),
   limit: z.coerce.number().min(0, 'Limit must be a positive number.'),
   currency: z.string().min(2, 'Currency is required.'),
   dueDate: z.date({ required_error: 'A due date is required.' }),
@@ -58,13 +59,14 @@ interface CardFormProps {
 }
 
 export function CardForm({ card, onSave, onDone }: CardFormProps) {
-    const { toast } = useToast();
+  const { toast } = useToast();
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
     defaultValues: {
       provider: card?.provider || '',
       network: card?.network || '',
       cardName: card?.cardName || '',
+      imageUrl: card?.imageUrl || '',
       limit: card?.limit || 0,
       currency: card?.currency || 'USD',
       dueDate: card?.dueDate ? new Date(card.dueDate) : undefined,
@@ -79,12 +81,23 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     name: 'benefits',
   });
 
+  const provider = form.watch('provider');
+  const cardName = form.watch('cardName');
+
+  const handleFindImage = () => {
+    const query = encodeURIComponent(`${provider} ${cardName} credit card`);
+    const url = `https://www.google.com/search?tbm=isch&q=${query}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   async function onSubmit(data: CardFormValues) {
-    await onSave({
-      ...data,
-      dueDate: data.dueDate.toISOString(),
-      statementDate: data.statementDate.toISOString(),
-    });
+    const saveData = {
+        ...data,
+        imageUrl: data.imageUrl || undefined,
+        dueDate: data.dueDate.toISOString(),
+        statementDate: data.statementDate.toISOString(),
+    }
+    await onSave(saveData);
     toast({
       title: `Card ${card ? 'updated' : 'added'}`,
       description: `Your card "${data.cardName}" has been saved.`,
@@ -171,6 +184,27 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
               </FormItem>
             )}
           />
+          <div className="md:col-span-2">
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Card Image URL</FormLabel>
+                   <div className="flex items-center gap-2">
+                    <FormControl>
+                        <Input placeholder="https://example.com/image.png" {...field} />
+                    </FormControl>
+                    <Button type="button" variant="secondary" onClick={handleFindImage} disabled={!provider && !cardName}>
+                        <Search className="h-4 w-4 md:mr-2"/>
+                        <span className="hidden md:inline">Find</span>
+                    </Button>
+                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
            <FormField
             control={form.control}
             name="dueDate"
