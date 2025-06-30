@@ -11,10 +11,13 @@ export interface CreditCard {
   network: string;
   cardName: string;
   benefits: Benefit[];
+  perks: string[];
   dueDate: string;
   statementDate: string;
   limit: number;
   currency: string;
+  annualFee: number;
+  apr: number;
   imageUrl?: string;
   enableAlerts: boolean;
 }

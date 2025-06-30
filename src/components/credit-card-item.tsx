@@ -6,7 +6,10 @@ import {
   CalendarDays,
   CircleDollarSign,
   CreditCard as CreditCardIcon,
+  DollarSign,
+  Landmark,
   Pencil,
+  Percent,
   Star,
   Trash2,
 } from 'lucide-react';
@@ -55,17 +58,20 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
   const today = new Date();
   const isPastDue = nextDueDate < today;
   
-  let formattedLimit = card.limit.toLocaleString();
-  try {
-    formattedLimit = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: card.currency,
-      maximumFractionDigits: 0,
-    }).format(card.limit);
-  } catch (e) {
-    // Fallback for invalid currency codes
-    formattedLimit = `${card.limit.toLocaleString()} ${card.currency}`;
-  }
+  const formatCurrency = (amount: number, currency: string) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch (e) {
+      return `${amount.toLocaleString()} ${currency}`;
+    }
+  };
+  
+  const formattedLimit = formatCurrency(card.limit, card.currency);
+  const formattedAnnualFee = formatCurrency(card.annualFee, card.currency);
 
 
   return (
@@ -101,6 +107,14 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
                 <CircleDollarSign className="mr-2 h-4 w-4" />
                 <span>Limit: {formattedLimit}</span>
             </div>
+             <div className="flex items-center text-sm text-muted-foreground">
+                <DollarSign className="mr-2 h-4 w-4" />
+                <span>Annual Fee: {formattedAnnualFee}</span>
+            </div>
+             <div className="flex items-center text-sm text-muted-foreground">
+                <Percent className="mr-2 h-4 w-4" />
+                <span>APR: {card.apr}%</span>
+            </div>
             <div className="flex items-center text-sm text-muted-foreground">
                 <CalendarDays className="mr-2 h-4 w-4" />
                 <span>Statement on {format(new Date(card.statementDate), 'do')} of month</span>
@@ -113,8 +127,23 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
             </div>
         </div>
         <Separator/>
+         <div className="space-y-2">
+            <h4 className="font-semibold text-sm">Perks</h4>
+            <div className="flex flex-wrap gap-2">
+            {card.perks?.length > 0 ? (
+                card.perks.map((perk, index) => (
+                <Badge key={index} variant="outline">
+                    {perk}
+                </Badge>
+                ))
+            ) : (
+                <p className="text-sm text-muted-foreground">No perks added.</p>
+            )}
+            </div>
+        </div>
+        <Separator/>
         <div className="space-y-2">
-            <h4 className="font-semibold text-sm">Benefits</h4>
+            <h4 className="font-semibold text-sm">Rewards</h4>
             <div className="flex flex-wrap gap-2">
             {card.benefits.length > 0 ? (
                 card.benefits.map((benefit) => (
@@ -124,7 +153,7 @@ export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) 
                 </Badge>
                 ))
             ) : (
-                <p className="text-sm text-muted-foreground">No benefits added.</p>
+                <p className="text-sm text-muted-foreground">No rewards added.</p>
             )}
             </div>
         </div>

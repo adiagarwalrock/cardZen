@@ -3,8 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle, Search, Trash2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Search, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +31,8 @@ import { CreditCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomLists } from '@/hooks/use-custom-lists';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 const cardFormSchema = z.object({
   provider: z.string().min(1, 'Provider is required.'),
@@ -38,9 +41,12 @@ const cardFormSchema = z.object({
   imageUrl: z.string().url('Please enter a valid image URL.').optional().or(z.literal('')),
   limit: z.coerce.number().min(0, 'Limit must be a positive number.'),
   currency: z.string().min(2, 'Currency is required.'),
+  annualFee: z.coerce.number().min(0, 'Fee must be a positive number.').default(0),
+  apr: z.coerce.number().min(0, 'APR must be a positive number.').max(100, 'APR seems too high.').default(0),
   dueDate: z.date({ required_error: 'A due date is required.' }),
   statementDate: z.date({ required_error: 'A statement date is required.' }),
   enableAlerts: z.boolean().default(true),
+  perks: z.array(z.string()).default([]),
   benefits: z.array(
     z.object({
       id: z.string(),
@@ -62,6 +68,7 @@ interface CardFormProps {
 export function CardForm({ card, onSave, onDone }: CardFormProps) {
   const { toast } = useToast();
   const { providers, networks } = useCustomLists();
+  const [newPerk, setNewPerk] = useState('');
 
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
@@ -72,9 +79,12 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
       imageUrl: card?.imageUrl || '',
       limit: card?.limit || 0,
       currency: card?.currency || 'USD',
+      annualFee: card?.annualFee || 0,
+      apr: card?.apr || 0,
       dueDate: card?.dueDate ? new Date(card.dueDate) : undefined,
       statementDate: card?.statementDate ? new Date(card.statementDate) : undefined,
       enableAlerts: card?.enableAlerts ?? true,
+      perks: card?.perks || [],
       benefits: card?.benefits || [],
     },
   });
@@ -84,6 +94,8 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     name: 'benefits',
   });
 
+  const perks = form.watch('perks');
+
   const provider = form.watch('provider');
   const cardName = form.watch('cardName');
 
@@ -92,6 +104,28 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     const url = `https://www.google.com/search?tbm=isch&q=${query}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  const handleAddPerk = () => {
+    if (newPerk.trim()) {
+      const currentPerks = form.getValues('perks');
+      if (!currentPerks.includes(newPerk.trim())) {
+        form.setValue('perks', [...currentPerks, newPerk.trim()]);
+        setNewPerk('');
+      }
+    }
+  }
+
+  const handleRemovePerk = (indexToRemove: number) => {
+    const currentPerks = form.getValues('perks');
+    form.setValue('perks', currentPerks.filter((_, index) => index !== indexToRemove));
+  }
+  
+  const handlePerkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddPerk();
+    }
+  }
 
   async function onSubmit(data: CardFormValues) {
     const saveData = {
@@ -110,7 +144,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -201,6 +235,32 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
                     <SelectItem value="JPY">JPY</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="annualFee"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Annual Fee</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g. 95" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="apr"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>APR (%)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g. 21.99" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -305,9 +365,45 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             )}
           />
         </div>
+        
+        <Separator/>
 
         <div>
-            <h3 className="text-lg font-medium mb-4">Benefits</h3>
+            <h3 className="text-lg font-medium mb-4">Perks</h3>
+             <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Input
+                        placeholder="e.g., Lounge Access"
+                        value={newPerk}
+                        onChange={(e) => setNewPerk(e.target.value)}
+                        onKeyDown={handlePerkKeyDown}
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddPerk}>
+                        Add
+                    </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {perks.map((perk, index) => (
+                    <Badge key={index} variant="secondary" className="group text-sm inline-flex items-center">
+                        {perk}
+                        <button
+                        type="button"
+                        onClick={() => handleRemovePerk(index)}
+                        className="ml-2 rounded-full p-0.5 hover:bg-muted-foreground/20 opacity-50 group-hover:opacity-100"
+                        aria-label={`Remove ${perk}`}
+                        >
+                        <X className="h-3 w-3" />
+                        </button>
+                    </Badge>
+                    ))}
+                </div>
+             </div>
+        </div>
+
+        <Separator/>
+
+        <div>
+            <h3 className="text-lg font-medium mb-4">Quantitative Rewards (Cashback/Points)</h3>
             <div className="space-y-4">
                  {fields.map((field, index) => (
                     <div key={field.id} className="flex gap-2 items-end p-4 border rounded-md relative">
@@ -317,7 +413,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
                                 name={`benefits.${index}.name`}
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Benefit Name</FormLabel>
+                                    <FormLabel>Reward Name</FormLabel>
                                     <FormControl>
                                         <Input placeholder="e.g. Dining" {...field} />
                                     </FormControl>
@@ -373,11 +469,13 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
                     onClick={() => append({ id: crypto.randomUUID(), name: '', value: 0, type: 'cashback' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Benefit
+                    Add Reward
                 </Button>
             </div>
         </div>
         
+        <Separator/>
+
         <FormField
           control={form.control}
           name="enableAlerts"

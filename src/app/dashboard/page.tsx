@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { Grid, List, PlusCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CreditCardListItem } from '@/components/credit-card-list-item';
 
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('cardName');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const handleEdit = (card: CreditCard) => {
     setEditingCard(card);
@@ -69,6 +71,9 @@ export default function DashboardPage() {
         }
         if (sortBy === 'limit') {
           return b.limit - a.limit;
+        }
+        if (sortBy === 'annualFee') {
+          return b.annualFee - a.annualFee;
         }
         // Default to cardName
         return a.cardName.localeCompare(b.cardName);
@@ -108,23 +113,34 @@ export default function DashboardPage() {
       </div>
 
       {isLoaded && cards.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Input
-            placeholder="Filter by name or provider..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cardName">Card Name</SelectItem>
-              <SelectItem value="dueDate">Due Date</SelectItem>
-              <SelectItem value="limit">Credit Limit (High-Low)</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              placeholder="Filter by name or provider..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-xs"
+            />
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cardName">Card Name</SelectItem>
+                <SelectItem value="dueDate">Due Date</SelectItem>
+                <SelectItem value="limit">Credit Limit (High-Low)</SelectItem>
+                <SelectItem value="annualFee">Annual Fee (High-Low)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1 self-end">
+             <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
+                <Grid className="h-4 w-4" />
+             </Button>
+             <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
+                <List className="h-4 w-4" />
+             </Button>
+          </div>
         </div>
       )}
 
@@ -151,7 +167,7 @@ export default function DashboardPage() {
         </div>
       )}
       
-      {isLoaded && filteredAndSortedCards.length > 0 && (
+      {isLoaded && filteredAndSortedCards.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
                 {filteredAndSortedCards.map((card) => (
@@ -172,6 +188,28 @@ export default function DashboardPage() {
                 ))}
             </AnimatePresence>
         </div>
+      )}
+      {isLoaded && filteredAndSortedCards.length > 0 && viewMode === 'list' && (
+         <div className="space-y-4">
+            <AnimatePresence>
+                {filteredAndSortedCards.map((card) => (
+                     <motion.div
+                        key={card.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <CreditCardListItem
+                            card={card}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+         </div>
       )}
     </div>
   );
