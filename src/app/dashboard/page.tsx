@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Grid, List, PlusCircle, Bell } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { differenceInDays, isAfter, startOfDay, format } from 'date-fns';
@@ -31,6 +31,10 @@ import { CreditCardListItem } from '@/components/credit-card-list-item';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+interface UpcomingPayment extends CreditCard {
+  daysRemaining: number;
+}
+
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
   const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
@@ -39,6 +43,32 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('cardName');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
+
+  useEffect(() => {
+    if (!cards || !alertSettingsLoaded) return;
+
+    const today = startOfDay(new Date());
+
+    const payments = cards
+      .filter(card => {
+        if (!card.enableAlerts) return false;
+        const dueDate = startOfDay(new Date(card.dueDate));
+        const daysRemaining = differenceInDays(dueDate, today);
+        return isAfter(dueDate, today) && daysRemaining <= alertDays;
+      })
+      .map(card => {
+        const dueDate = startOfDay(new Date(card.dueDate));
+        return {
+          ...card,
+          daysRemaining: differenceInDays(dueDate, today),
+        };
+      })
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      
+    setUpcomingPayments(payments);
+  }, [cards, alertDays, alertSettingsLoaded]);
+
 
   const handleEdit = (card: CreditCard) => {
     setEditingCard(card);
@@ -61,26 +91,6 @@ export default function DashboardPage() {
   
   const handleDelete = (cardId: string) => {
     deleteCard(cardId);
-  }
-
-  const upcomingPayments = useMemo(() => {
-    if (!cards || !alertSettingsLoaded) return [];
-
-    const today = startOfDay(new Date());
-    
-    return cards.filter(card => {
-        if (!card.enableAlerts) return false;
-        const dueDate = startOfDay(new Date(card.dueDate));
-        const daysRemaining = differenceInDays(dueDate, today);
-        return isAfter(dueDate, today) && daysRemaining <= alertDays;
-    }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
-  }, [cards, alertDays, alertSettingsLoaded]);
-
-  const getDaysRemaining = (dueDate: string) => {
-      const today = startOfDay(new Date());
-      const due = startOfDay(new Date(dueDate));
-      return differenceInDays(due, today);
   }
 
   const filteredAndSortedCards = useMemo(() => {
@@ -141,7 +151,7 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold tracking-tight">Upcoming Payments</h2>
             <div className="grid gap-4 md:grid-cols-2">
             {upcomingPayments.map(card => {
-                const daysRemaining = getDaysRemaining(card.dueDate);
+                const daysRemaining = card.daysRemaining;
                 return (
                     <Alert key={card.id}>
                         <Bell className="h-4 w-4" />

@@ -11,10 +11,11 @@ import {
   Percent,
   Star,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 import { CreditCard, Benefit } from '@/lib/types';
 import {
@@ -56,10 +57,14 @@ const BenefitIcon = ({ type }: { type: Benefit['type'] }) => {
 
 export function CreditCardItem({ card, onEdit, onDelete }: CreditCardItemProps) {
   const { safeSpendPercentage } = useSafeSpend();
-  const nextDueDate = new Date(card.dueDate);
-  const today = new Date();
-  const isPastDue = nextDueDate < today;
-  
+  const [isPastDue, setIsPastDue] = useState(false);
+
+  useEffect(() => {
+    const today = new Date();
+    const nextDueDate = new Date(card.dueDate);
+    setIsPastDue(nextDueDate < today);
+  }, [card.dueDate]);
+
   const formatCurrency = (amount: number, currency: string) => {
     try {
       return new Intl.NumberFormat('en-US', {
