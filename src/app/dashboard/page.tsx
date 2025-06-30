@@ -30,6 +30,7 @@ import {
 import { CreditCardListItem } from '@/components/credit-card-list-item';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
@@ -38,12 +39,16 @@ interface UpcomingPayment extends CreditCard {
 export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
   const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
+  const { userName, isLoaded: userLoaded } = useUserProfile();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('cardName');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
+  const [greeting, setGreeting] = useState('');
+
+  const isFullyLoaded = isLoaded && alertSettingsLoaded && userLoaded;
 
   useEffect(() => {
     if (!cards || !alertSettingsLoaded) return;
@@ -68,6 +73,24 @@ export default function DashboardPage() {
       
     setUpcomingPayments(payments);
   }, [cards, alertDays, alertSettingsLoaded]);
+  
+  useEffect(() => {
+    if (userLoaded) {
+      const hour = new Date().getHours();
+      let emoji = '';
+
+      if (hour < 12) {
+        emoji = '☀️';
+      } else if (hour < 18) {
+        emoji = '👋';
+      } else {
+        emoji = '🌙';
+      }
+      
+      const namePart = userName ? `, ${userName}` : '';
+      setGreeting(`Hello${namePart}! ${emoji}`);
+    }
+  }, [userName, userLoaded]);
 
 
   const handleEdit = (card: CreditCard) => {
@@ -118,10 +141,19 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Cards</h1>
-          <p className="text-muted-foreground">
-            An overview of your credit cards.
-          </p>
+          {isFullyLoaded ? (
+              <>
+                <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
+                <p className="text-muted-foreground">
+                  Here's an overview of your credit cards.
+                </p>
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-9 w-64 mb-2" />
+                <Skeleton className="h-5 w-80" />
+              </>
+          )}
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
@@ -146,7 +178,7 @@ export default function DashboardPage() {
         </Dialog>
       </div>
 
-       {isLoaded && upcomingPayments.length > 0 && (
+       {isFullyLoaded && upcomingPayments.length > 0 && (
         <div className="space-y-4">
             <h2 className="text-xl font-semibold tracking-tight">Upcoming Payments</h2>
             <div className="grid gap-4 md:grid-cols-2">
@@ -166,7 +198,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {isLoaded && cards.length > 0 && (
+      {isFullyLoaded && cards.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
@@ -198,13 +230,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!isLoaded && (
+      {!isFullyLoaded && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
         </div>
       )}
       
-      {isLoaded && filteredAndSortedCards.length === 0 && (
+      {isFullyLoaded && filteredAndSortedCards.length === 0 && (
          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center mt-8">
             <h3 className="text-2xl font-bold tracking-tight">
               {searchTerm ? 'No matching cards' : 'No cards yet'}
@@ -221,7 +253,7 @@ export default function DashboardPage() {
         </div>
       )}
       
-      {isLoaded && filteredAndSortedCards.length > 0 && viewMode === 'grid' && (
+      {isFullyLoaded && filteredAndSortedCards.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
                 {filteredAndSortedCards.map((card) => (
@@ -243,7 +275,7 @@ export default function DashboardPage() {
             </AnimatePresence>
         </div>
       )}
-      {isLoaded && filteredAndSortedCards.length > 0 && viewMode === 'list' && (
+      {isFullyLoaded && filteredAndSortedCards.length > 0 && viewMode === 'list' && (
          <div className="space-y-4">
             <AnimatePresence>
                 {filteredAndSortedCards.map((card) => (
