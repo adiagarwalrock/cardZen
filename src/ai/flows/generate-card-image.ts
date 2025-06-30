@@ -36,13 +36,14 @@ const generateCardImageFlow = ai.defineFlow(
   async (input) => {
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `Generate a photorealistic image of a credit card.
+      prompt: `Generate a photorealistic image that looks like a real product photo of a credit card.
       The card should be for '${input.provider}' and the card name is '${input.cardName}'.
       The network is '${input.network}'.
-      The style should be modern, sleek, and professional.
-      The card should be visually appealing.
+      The image should be inspired by real-world credit card designs, but be a unique creation.
+      The style should be modern, sleek, and professional, as if from a marketing website.
+      The card should be visually appealing and look realistic.
       Do not include any readable card numbers, member names, or expiration dates. Use placeholder text or symbols for those elements.
-      The image should be a close-up of the card on a neutral background.`,
+      The image should be a close-up of the card on a neutral, professional background.`,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
