@@ -214,7 +214,7 @@ export default function DashboardPage() {
             {upcomingPayments.map(card => {
                 const daysRemaining = card.daysRemaining;
                 return (
-                    <Alert key={card.id}>
+                    <Alert key={card.id} variant="destructive">
                         <Bell className="h-4 w-4" />
                         <AlertTitle>Due Soon: {card.cardName}</AlertTitle>
                         <AlertDescription>
