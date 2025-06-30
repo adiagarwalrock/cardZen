@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CreditCard, Landmark } from 'lucide-react';
+import { CreditCard, Landmark, ShieldCheck } from 'lucide-react';
 import { Cell, Pie, PieChart } from 'recharts';
 
 import { useCreditCards } from '@/hooks/use-credit-cards';
@@ -12,16 +12,20 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useSafeSpend } from '@/hooks/use-safe-spend';
 
 export default function AnalyticsPage() {
-  const { cards, isLoaded } = useCreditCards();
+  const { cards, isLoaded: cardsLoaded } = useCreditCards();
+  const { safeSpendPercentage, isLoaded: spendLimitLoaded } = useSafeSpend();
 
-  const { totalCards, formattedLimits } = useMemo(() => {
+  const isLoaded = cardsLoaded && spendLimitLoaded;
+
+  const { totalCards, limitsByCurrency } = useMemo(() => {
     if (!isLoaded || cards.length === 0) {
-      return { totalCards: 0, formattedLimits: [] };
+      return { totalCards: 0, limitsByCurrency: {} };
     }
 
-    const limitsByCurrency = cards.reduce(
+    const limits = cards.reduce(
       (acc, card) => {
         if (!acc[card.currency]) {
           acc[card.currency] = 0;
@@ -32,25 +36,37 @@ export default function AnalyticsPage() {
       {} as Record<string, number>
     );
 
-    const formatted = Object.entries(limitsByCurrency).map(
-      ([currency, total]) => {
+    return {
+      totalCards: cards.length,
+      limitsByCurrency: limits,
+    };
+  }, [cards, isLoaded]);
+
+  const { formattedLimits, safeSpendTargets } = useMemo(() => {
+     const format = (amount: number, currency: string) => {
         try {
           return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
             maximumFractionDigits: 0,
-          }).format(total);
+          }).format(amount);
         } catch {
-          return `${total.toLocaleString()} ${currency}`;
+          return `${amount.toLocaleString()} ${currency}`;
         }
       }
-    );
 
-    return {
-      totalCards: cards.length,
-      formattedLimits: formatted,
-    };
-  }, [cards, isLoaded]);
+      const formatted = Object.entries(limitsByCurrency).map(
+        ([currency, total]) => format(total, currency)
+      );
+
+      const targets = Object.entries(limitsByCurrency).map(
+        ([currency, total]) => format((total * safeSpendPercentage) / 100, currency)
+      )
+
+      return { formattedLimits: formatted, safeSpendTargets: targets };
+
+  }, [limitsByCurrency, safeSpendPercentage])
+
 
   const cardsByProvider = useMemo(() => {
     if (!isLoaded || cards.length === 0) return [];
@@ -80,7 +96,8 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground">Your financial overview.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-[120px]" />
           <Skeleton className="h-[120px]" />
           <Skeleton className="h-[120px]" />
         </div>
@@ -96,7 +113,7 @@ export default function AnalyticsPage() {
         <p className="text-muted-foreground">Your financial overview.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -129,6 +146,26 @@ export default function AnalyticsPage() {
             <p className="text-xs text-muted-foreground">
               Currently managed in CardZen
             </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Safe Spend Target
+            </CardTitle>
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+             {safeSpendTargets.length > 0 ? (
+                safeSpendTargets.map((target, index) => (
+                  <div key={index} className="text-2xl font-bold">
+                    {target}
+                  </div>
+                ))
+              ) : (
+                <div className="text-2xl font-bold">$0</div>
+              )}
+            <p className="text-xs text-muted-foreground">Based on your {safeSpendPercentage}% utilization goal</p>
           </CardContent>
         </Card>
       </div>

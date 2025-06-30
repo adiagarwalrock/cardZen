@@ -5,6 +5,7 @@ import { type CustomListItem } from '@/lib/types';
 
 const PROVIDERS_STORAGE_KEY = 'cardzen-providers';
 const NETWORKS_STORAGE_KEY = 'cardzen-networks';
+const PERKS_STORAGE_KEY = 'cardzen-perks';
 
 const defaultProviders: CustomListItem[] = [
   { id: 'prov-1', name: 'Chase' },
@@ -22,10 +23,19 @@ const defaultNetworks: CustomListItem[] = [
   { id: 'net-4', name: 'Discover' },
 ];
 
+const defaultPerks: CustomListItem[] = [
+    { id: 'perk-1', name: 'Lounge Access' },
+    { id: 'perk-2', name: 'Travel Insurance' },
+    { id: 'perk-3', name: 'No Foreign Transaction Fees' },
+    { id: 'perk-4', name: 'Extended Warranty' },
+    { id: 'perk-5', name: 'Purchase Protection' },
+];
+
 
 export function useCustomLists() {
   const [providers, setProviders] = useState<CustomListItem[]>([]);
   const [networks, setNetworks] = useState<CustomListItem[]>([]);
+  const [perks, setPerks] = useState<CustomListItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -45,11 +55,21 @@ export function useCustomLists() {
         setNetworks(defaultNetworks);
         localStorage.setItem(NETWORKS_STORAGE_KEY, JSON.stringify(defaultNetworks));
       }
+
+      const storedPerks = localStorage.getItem(PERKS_STORAGE_KEY);
+      if (storedPerks && JSON.parse(storedPerks).length > 0) {
+        setPerks(JSON.parse(storedPerks));
+      } else {
+        setPerks(defaultPerks);
+        localStorage.setItem(PERKS_STORAGE_KEY, JSON.stringify(defaultPerks));
+      }
+
     } catch (error) {
       console.error('Failed to load custom lists from localStorage', error);
       // Set defaults on error to prevent app crash
       setProviders(defaultProviders);
       setNetworks(defaultNetworks);
+      setPerks(defaultPerks);
     } finally {
       setIsLoaded(true);
     }
@@ -73,6 +93,15 @@ export function useCustomLists() {
     }
   };
 
+  const savePerks = (updatedPerks: CustomListItem[]) => {
+    try {
+      setPerks(updatedPerks);
+      localStorage.setItem(PERKS_STORAGE_KEY, JSON.stringify(updatedPerks));
+    } catch (error) {
+      console.error('Failed to save perks to localStorage', error);
+    }
+  };
+
   const addProvider = (name: string) => {
     if (!name.trim() || providers.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) return;
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
@@ -93,5 +122,20 @@ export function useCustomLists() {
     saveNetworks(networks.filter((item) => item.id !== id));
   };
 
-  return { providers, addProvider, deleteProvider, networks, addNetwork, deleteNetwork, isLoaded };
+  const addPerk = (name: string) => {
+     if (!name.trim() || perks.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) return;
+    const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
+    savePerks([...perks, newItem].sort((a,b) => a.name.localeCompare(b.name)));
+  };
+
+  const deletePerk = (id: string) => {
+    savePerks(perks.filter((item) => item.id !== id));
+  };
+
+  return { 
+    providers, addProvider, deleteProvider, 
+    networks, addNetwork, deleteNetwork, 
+    perks, addPerk, deletePerk,
+    isLoaded 
+  };
 }

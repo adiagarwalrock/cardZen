@@ -4,6 +4,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle, Save, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { useSpendingHabits } from '@/hooks/use-spending-habits';
 import { Button } from '@/components/ui/button';
@@ -11,9 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
 import { useCustomLists } from '@/hooks/use-custom-lists';
 import { Badge } from '@/components/ui/badge';
+import { useSafeSpend } from '@/hooks/use-safe-spend';
+import { Slider } from '@/components/ui/slider';
 
 const settingsSchema = z.object({
   habits: z.array(
@@ -30,15 +32,24 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 const defaultCategories = ['Groceries', 'Dining', 'Travel', 'Shopping', 'Gas', 'Entertainment'];
 
 export default function SettingsPage() {
-  const { habits, saveHabits, isLoaded } = useSpendingHabits();
+  const { habits, saveHabits, isLoaded: habitsLoaded } = useSpendingHabits();
+  const { 
+    safeSpendPercentage, 
+    saveSafeSpendPercentage, 
+    isLoaded: safeSpendLoaded 
+  } = useSafeSpend();
+  
   const { 
     providers, addProvider, deleteProvider, 
-    networks, addNetwork, deleteNetwork
+    networks, addNetwork, deleteNetwork,
+    perks, addPerk, deletePerk
   } = useCustomLists();
 
   const { toast } = useToast();
   const [newProvider, setNewProvider] = useState('');
   const [newNetwork, setNewNetwork] = useState('');
+  const [newPerk, setNewPerk] = useState('');
+  const [spendLimit, setSpendLimit] = useState(safeSpendPercentage);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -48,7 +59,7 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (isLoaded) {
+    if (habitsLoaded) {
       if(habits.length > 0) {
         form.reset({ habits });
       } else {
@@ -61,7 +72,13 @@ export default function SettingsPage() {
         })
       }
     }
-  }, [isLoaded, form, habits]);
+  }, [habitsLoaded, form, habits]);
+
+   useEffect(() => {
+    if (safeSpendLoaded) {
+      setSpendLimit(safeSpendPercentage);
+    }
+  }, [safeSpendLoaded, safeSpendPercentage]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -86,6 +103,18 @@ export default function SettingsPage() {
     setNewNetwork('');
   };
 
+  const handleAddPerk = () => {
+    addPerk(newPerk);
+    setNewPerk('');
+  };
+
+  const handleSaveSpendLimit = () => {
+    saveSafeSpendPercentage(spendLimit);
+    toast({
+        title: 'Settings Saved',
+        description: 'Your safe spend limit has been updated.',
+    })
+  }
 
   return (
     <div className="space-y-8">
@@ -93,6 +122,31 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage your spending habits, card providers, and networks.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Safe Spend Limit</CardTitle>
+            <CardDescription>Set a target credit utilization percentage to maintain a healthy credit score.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                    <Slider
+                        value={[spendLimit]}
+                        onValueChange={(value) => setSpendLimit(value[0])}
+                        max={100}
+                        step={1}
+                        className="flex-1"
+                    />
+                    <div className="w-20 text-center text-lg font-semibold">{spendLimit}%</div>
+                </div>
+                 <Button onClick={handleSaveSpendLimit}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Limit
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -159,7 +213,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-3 gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Manage Providers</CardTitle>
@@ -215,6 +269,38 @@ export default function SettingsPage() {
                   <Badge key={network.id} variant="secondary" className="group text-sm inline-flex items-center">
                     {network.name}
                     <button onClick={() => deleteNetwork(network.id)} className="ml-2 rounded-full p-0.5 hover:bg-muted-foreground/20 opacity-50 group-hover:opacity-100" aria-label={`Remove ${network.name}`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+         <Card>
+          <CardHeader>
+            <CardTitle>Manage Perks</CardTitle>
+            <CardDescription>Add or remove common card perks.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="New perk name"
+                  value={newPerk}
+                  onChange={(e) => setNewPerk(e.target.value)}
+                  onKeyDown={(e) => {if (e.key === 'Enter') { e.preventDefault(); handleAddPerk();}}}
+                />
+                <Button onClick={handleAddPerk} aria-label="Add perk">
+                  <PlusCircle />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {perks.map((perk) => (
+                  <Badge key={perk.id} variant="secondary" className="group text-sm inline-flex items-center">
+                    {perk.name}
+                    <button onClick={() => deletePerk(perk.id)} className="ml-2 rounded-full p-0.5 hover:bg-muted-foreground/20 opacity-50 group-hover:opacity-100" aria-label={`Remove ${perk.name}`}>
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>

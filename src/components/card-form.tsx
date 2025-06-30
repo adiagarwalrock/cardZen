@@ -3,9 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle, Search, Trash2, X } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Search, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,8 +30,8 @@ import { CreditCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomLists } from '@/hooks/use-custom-lists';
-import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { Checkbox } from './ui/checkbox';
 
 const cardFormSchema = z.object({
   provider: z.string().min(1, 'Provider is required.'),
@@ -67,8 +66,7 @@ interface CardFormProps {
 
 export function CardForm({ card, onSave, onDone }: CardFormProps) {
   const { toast } = useToast();
-  const { providers, networks } = useCustomLists();
-  const [newPerk, setNewPerk] = useState('');
+  const { providers, networks, perks } = useCustomLists();
 
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
@@ -94,8 +92,6 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     name: 'benefits',
   });
 
-  const perks = form.watch('perks');
-
   const provider = form.watch('provider');
   const cardName = form.watch('cardName');
 
@@ -104,29 +100,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     const url = `https://www.google.com/search?tbm=isch&q=${query}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
-
-  const handleAddPerk = () => {
-    if (newPerk.trim()) {
-      const currentPerks = form.getValues('perks');
-      if (!currentPerks.includes(newPerk.trim())) {
-        form.setValue('perks', [...currentPerks, newPerk.trim()]);
-        setNewPerk('');
-      }
-    }
-  }
-
-  const handleRemovePerk = (indexToRemove: number) => {
-    const currentPerks = form.getValues('perks');
-    form.setValue('perks', currentPerks.filter((_, index) => index !== indexToRemove));
-  }
   
-  const handlePerkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        handleAddPerk();
-    }
-  }
-
   async function onSubmit(data: CardFormValues) {
     const saveData = {
         ...data,
@@ -368,37 +342,51 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
         
         <Separator/>
 
-        <div>
-            <h3 className="text-lg font-medium mb-4">Perks</h3>
-             <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                    <Input
-                        placeholder="e.g., Lounge Access"
-                        value={newPerk}
-                        onChange={(e) => setNewPerk(e.target.value)}
-                        onKeyDown={handlePerkKeyDown}
-                    />
-                    <Button type="button" variant="outline" onClick={handleAddPerk}>
-                        Add
-                    </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                    {perks.map((perk, index) => (
-                    <Badge key={index} variant="secondary" className="group text-sm inline-flex items-center">
-                        {perk}
-                        <button
-                        type="button"
-                        onClick={() => handleRemovePerk(index)}
-                        className="ml-2 rounded-full p-0.5 hover:bg-muted-foreground/20 opacity-50 group-hover:opacity-100"
-                        aria-label={`Remove ${perk}`}
-                        >
-                        <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
-                    ))}
-                </div>
-             </div>
-        </div>
+        <FormField
+            control={form.control}
+            name="perks"
+            render={({ field }) => (
+                <FormItem>
+                     <h3 className="text-lg font-medium mb-2">Perks</h3>
+                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {perks.map((perk) => (
+                            <FormField
+                                key={perk.id}
+                                control={form.control}
+                                name="perks"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={perk.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(perk.name)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...field.value, perk.name])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                    (value) => value !== perk.name
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal text-sm">
+                                            {perk.name}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                            />
+                        ))}
+                     </div>
+                     <FormMessage/>
+                </FormItem>
+            )}
+        />
 
         <Separator/>
 
