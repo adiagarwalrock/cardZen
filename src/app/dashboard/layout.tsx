@@ -8,6 +8,8 @@ import {
   Lightbulb,
   Settings,
 } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -26,6 +28,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  
+  const activeItem = navItems.find(item => pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard'));
+  const activePath = activeItem ? activeItem.href : pathname;
+  
+  const [hoveredPath, setHoveredPath] = useState(activePath);
 
   return (
     <div className="min-h-screen w-full">
@@ -42,21 +49,35 @@ export default function DashboardLayout({
       
       {/* Floating Bottom Nav */}
       <nav className="fixed bottom-4 inset-x-0 z-20 flex justify-center">
-         <div className="flex items-center gap-2 rounded-full border border-black/10 bg-white/70 dark:bg-black/50 p-2 shadow-lg backdrop-blur-lg dark:border-white/10">
+         <div 
+          className="flex items-center gap-1 rounded-full border border-black/10 bg-white/70 dark:bg-black/50 p-2 shadow-lg backdrop-blur-lg dark:border-white/10"
+          onMouseLeave={() => setHoveredPath(activePath)}
+          >
             {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')
+              const isHovered = item.href === hoveredPath;
+
               return (
-              <Link href={item.href} key={item.href}>
-                <div 
-                    className={cn(
-                      'flex items-center justify-center p-3 rounded-full text-foreground/70 transition-all duration-300 ease-in-out',
-                      isActive && 'bg-primary text-primary-foreground shadow-md',
-                      !isActive && 'hover:bg-black/5'
-                    )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="sr-only">{item.label}</span>
-                </div>
+              <Link 
+                href={item.href} 
+                key={item.href}
+                className={cn(
+                  'relative rounded-full px-3 py-2 text-sm font-medium transition-colors',
+                  isHovered ? 'text-primary-foreground' : 'text-foreground/70 hover:text-foreground/90'
+                )}
+                onMouseEnter={() => setHoveredPath(item.href)}
+              >
+                <span className="relative z-10 flex items-center">
+                    <item.icon className="h-5 w-5" />
+                    {isHovered && <motion.span layoutId="nav-label" className="ml-2 whitespace-nowrap">{item.label}</motion.span>}
+                </span>
+
+                {isHovered && (
+                    <motion.div
+                        className="absolute inset-0 bg-primary rounded-full shadow-md"
+                        layoutId="nav-pill"
+                        transition={{type: 'spring', stiffness: 350, damping: 30}}
+                    />
+                )}
               </Link>
             )})}
             <div className="md:hidden">
