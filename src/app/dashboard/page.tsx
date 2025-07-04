@@ -266,8 +266,8 @@ export default function DashboardPage() {
       )}
 
       {!isFullyLoaded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
         </div>
       )}
       
@@ -289,7 +289,7 @@ export default function DashboardPage() {
       )}
       
       {isFullyLoaded && filteredAndSortedCards.length > 0 && viewMode === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <AnimatePresence>
                 {filteredAndSortedCards.map((card) => (
                     <motion.div
