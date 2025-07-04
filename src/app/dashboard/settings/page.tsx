@@ -169,13 +169,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
         <p className="text-muted-foreground">Manage your settings and preferences.</p>
       </div>
 
-       <div className="grid md:grid-cols-2 gap-8">
+       <div className="grid grid-cols-1 gap-8">
         <Card>
             <CardHeader>
                 <CardTitle>Profile</CardTitle>
@@ -314,7 +314,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Manage Providers</CardTitle>
