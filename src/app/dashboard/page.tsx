@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Grid, List, PlusCircle, Bell } from 'lucide-react';
+import { Grid, List, PlusCircle, Bell, Moon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { differenceInDays, isAfter, startOfDay, format } from 'date-fns';
 
@@ -31,6 +31,7 @@ import { CreditCardListItem } from '@/components/credit-card-list-item';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
@@ -168,44 +169,81 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          {isFullyLoaded ? (
-              <>
-                <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
-                <p className="text-muted-foreground">
-                  Here's an overview of your credit cards.
-                </p>
-              </>
-            ) : (
-              <>
-                <Skeleton className="h-9 w-64 mb-2" />
-                <Skeleton className="h-5 w-80" />
-              </>
-          )}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            {isFullyLoaded ? (
+                <>
+                  <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
+                  <p className="text-muted-foreground">
+                    Here's an overview of your credit cards.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Skeleton className="h-9 w-64 mb-2" />
+                  <Skeleton className="h-5 w-80" />
+                </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNew}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Card
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingCard ? 'Edit Card' : 'Add a New Card'}</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details of your credit card. Click save when you're done.
+                  </DialogDescription>
+                </DialogHeader>
+                <CardForm
+                  card={editingCard}
+                  onSave={handleSave}
+                  onDone={() => setIsFormOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNew}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Card
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCard ? 'Edit Card' : 'Add a New Card'}</DialogTitle>
-              <DialogDescription>
-                Fill in the details of your credit card. Click save when you're done.
-              </DialogDescription>
-            </DialogHeader>
-            <CardForm
-              card={editingCard}
-              onSave={handleSave}
-              onDone={() => setIsFormOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        
+        {isFullyLoaded && cards.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Input
+                placeholder="Filter by name or provider..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-xs"
+              />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cardName">Card Name</SelectItem>
+                  <SelectItem value="dueDate">Due Date</SelectItem>
+                  <SelectItem value="limit">Credit Limit (High-Low)</SelectItem>
+                  <SelectItem value="annualFee">Annual Fee (High-Low)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1 self-end">
+               <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
+                  <Grid className="h-4 w-4" />
+               </Button>
+               <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
+                  <List className="h-4 w-4" />
+               </Button>
+            </div>
+          </div>
+        )}
       </div>
+
 
        {isFullyLoaded && upcomingPayments.length > 0 && (
         <div className="space-y-4">
@@ -224,38 +262,6 @@ export default function DashboardPage() {
                 )
             })}
             </div>
-        </div>
-      )}
-
-      {isFullyLoaded && cards.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Input
-              placeholder="Filter by name or provider..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-xs"
-            />
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cardName">Card Name</SelectItem>
-                <SelectItem value="dueDate">Due Date</SelectItem>
-                <SelectItem value="limit">Credit Limit (High-Low)</SelectItem>
-                <SelectItem value="annualFee">Annual Fee (High-Low)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-1 self-end">
-             <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                <Grid className="h-4 w-4" />
-             </Button>
-             <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                <List className="h-4 w-4" />
-             </Button>
-          </div>
         </div>
       )}
 

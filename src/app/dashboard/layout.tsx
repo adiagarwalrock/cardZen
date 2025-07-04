@@ -29,14 +29,14 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen w-full">
-      <header className="fixed top-0 left-0 right-0 z-20 flex h-20 items-center justify-between px-6">
+      <header className="flex h-20 items-center justify-between px-6">
         <Logo />
          <div className="hidden md:block">
            <ThemeToggle />
          </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-8 pt-24 pb-28">
+      <main className="p-4 md:p-8 pb-28">
         {children}
       </main>
       
