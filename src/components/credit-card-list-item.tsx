@@ -23,8 +23,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useSafeSpend } from '@/hooks/use-safe-spend';
-import { getOrdinal } from '@/lib/utils';
 
 interface CreditCardListItemProps {
   card: CreditCard;
@@ -33,27 +31,6 @@ interface CreditCardListItemProps {
 }
 
 export function CreditCardListItem({ card, onEdit, onDelete }: CreditCardListItemProps) {
-  const { safeSpendPercentage } = useSafeSpend();
-  
-  const formatCurrency = (amount: number, currency: string) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-        maximumFractionDigits: 0,
-      }).format(amount);
-    } catch (e) {
-      return `${amount.toLocaleString()} ${currency}`;
-    }
-  };
-  
-  const formattedLimit = formatCurrency(card.limit, card.currency);
-  const formattedAnnualFee = formatCurrency(card.annualFee, card.currency);
-  const safeSpendTarget = formatCurrency(
-    (card.limit * safeSpendPercentage) / 100,
-    card.currency
-  );
-
   return (
     <Card>
       <div className="flex items-center justify-between p-3 gap-4">
@@ -76,29 +53,6 @@ export function CreditCardListItem({ card, onEdit, onDelete }: CreditCardListIte
             <p className="font-semibold truncate">{card.cardName}</p>
             <p className="text-sm text-muted-foreground">{card.provider}</p>
           </div>
-        </div>
-
-        <div className="hidden md:flex items-center gap-x-6 text-sm text-center">
-            <div>
-                <p className="text-muted-foreground text-xs">Limit</p>
-                <p className="font-medium">{formattedLimit}</p>
-            </div>
-            <div className="hidden lg:block">
-                <p className="text-muted-foreground text-xs">Safe Spend</p>
-                <p className="font-medium">{safeSpendTarget}</p>
-            </div>
-            <div>
-                <p className="text-muted-foreground text-xs">Due Date</p>
-                <p className="font-medium">{getOrdinal(card.dueDate)} of month</p>
-            </div>
-            <div className="hidden lg:block">
-                <p className="text-muted-foreground text-xs">Annual Fee</p>
-                <p className="font-medium">{formattedAnnualFee}</p>
-            </div>
-             <div>
-                <p className="text-muted-foreground text-xs">APR</p>
-                <p className="font-medium">{card.apr}%</p>
-            </div>
         </div>
 
         <div className="flex items-center gap-2">
