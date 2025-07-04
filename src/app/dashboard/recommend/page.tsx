@@ -36,7 +36,7 @@ export default function RecommendPage() {
   const hasNoCards = cards.length === 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Smart Recommend</h1>
         <p className="text-muted-foreground">
