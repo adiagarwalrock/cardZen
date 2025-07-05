@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type CustomListItem } from '@/lib/types';
-
-const PROVIDERS_STORAGE_KEY = 'cardzen-providers';
-const NETWORKS_STORAGE_KEY = 'cardzen-networks';
-const PERKS_STORAGE_KEY = 'cardzen-perks';
+import { type CustomListItem, CustomListType } from '@/lib/types';
+import { getCustomLists, saveCustomLists } from '@/lib/database';
 
 const defaultProviders: CustomListItem[] = [
   { id: 'prov-1', name: 'Chase' },
@@ -39,29 +36,16 @@ export function useCustomLists() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedProviders = localStorage.getItem(PROVIDERS_STORAGE_KEY);
-      if (storedProviders && JSON.parse(storedProviders).length > 0) {
-        setProviders(JSON.parse(storedProviders));
-      } else {
-        setProviders(defaultProviders);
-        localStorage.setItem(PROVIDERS_STORAGE_KEY, JSON.stringify(defaultProviders));
-      }
+    const loadLists = async () => {
+      try {
+        const storedProviders = await getCustomLists(CustomListType.Provider, defaultProviders);
+        setProviders(storedProviders);
 
-      const storedNetworks = localStorage.getItem(NETWORKS_STORAGE_KEY);
-      if (storedNetworks && JSON.parse(storedNetworks).length > 0) {
-        setNetworks(JSON.parse(storedNetworks));
-      } else {
-        setNetworks(defaultNetworks);
-        localStorage.setItem(NETWORKS_STORAGE_KEY, JSON.stringify(defaultNetworks));
-      }
+        const storedNetworks = await getCustomLists(CustomListType.Network, defaultNetworks);
+        setNetworks(storedNetworks);
 
-      const storedPerks = localStorage.getItem(PERKS_STORAGE_KEY);
-      if (storedPerks && JSON.parse(storedPerks).length > 0) {
-        setPerks(JSON.parse(storedPerks));
-      } else {
-        setPerks(defaultPerks);
-        localStorage.setItem(PERKS_STORAGE_KEY, JSON.stringify(defaultPerks));
+        const storedPerks = await getCustomLists(CustomListType.Perk, defaultPerks);
+        setPerks(storedPerks);
       }
 
     } catch (error) {
@@ -73,37 +57,33 @@ export function useCustomLists() {
     } finally {
       setIsLoaded(true);
     }
+    };
+
+    loadLists();
   }, []);
 
   const saveProviders = (updatedProviders: CustomListItem[]) => {
-    try {
+    saveCustomLists(CustomListType.Provider, updatedProviders).then(() => {
       setProviders(updatedProviders);
-      localStorage.setItem(PROVIDERS_STORAGE_KEY, JSON.stringify(updatedProviders));
-    } catch (error) {
-      console.error('Failed to save providers to localStorage', error);
-    }
+    }).catch(error => console.error('Failed to save providers to database', error));
   };
-  
+
   const saveNetworks = (updatedNetworks: CustomListItem[]) => {
-    try {
+    saveCustomLists(CustomListType.Network, updatedNetworks).then(() => {
       setNetworks(updatedNetworks);
-      localStorage.setItem(NETWORKS_STORAGE_KEY, JSON.stringify(updatedNetworks));
-    } catch (error) {
-      console.error('Failed to save networks to localStorage', error);
-    }
+    }).catch(error => console.error('Failed to save networks to database', error));
   };
 
   const savePerks = (updatedPerks: CustomListItem[]) => {
-    try {
+    saveCustomLists(CustomListType.Perk, updatedPerks).then(() => {
       setPerks(updatedPerks);
-      localStorage.setItem(PERKS_STORAGE_KEY, JSON.stringify(updatedPerks));
-    } catch (error) {
-      console.error('Failed to save perks to localStorage', error);
-    }
+    }).catch(error => console.error('Failed to save perks to database', error));
   };
 
   const addProvider = (name: string) => {
-    if (!name.trim() || providers.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) return;
+    if (!name.trim() || providers.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) {
+      return;
+    }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
     saveProviders([...providers, newItem].sort((a,b) => a.name.localeCompare(b.name)));
   };
@@ -112,8 +92,11 @@ export function useCustomLists() {
     saveProviders(providers.filter((item) => item.id !== id));
   };
   
-  const addNetwork = (name: string) => {
+ const addNetwork = (name: string) => {
      if (!name.trim() || networks.some(n => n.name.toLowerCase() === name.trim().toLowerCase())) return;
+    if (!name.trim() || networks.some(n => n.name.toLowerCase() === name.trim().toLowerCase())) {
+      return;
+    }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
     saveNetworks([...networks, newItem].sort((a,b) => a.name.localeCompare(b.name)));
   };
@@ -123,7 +106,9 @@ export function useCustomLists() {
   };
 
   const addPerk = (name: string) => {
-     if (!name.trim() || perks.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) return;
+    if (!name.trim() || perks.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) {
+      return;
+    }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
     savePerks([...perks, newItem].sort((a,b) => a.name.localeCompare(b.name)));
   };
@@ -132,9 +117,9 @@ export function useCustomLists() {
     savePerks(perks.filter((item) => item.id !== id));
   };
 
-  return { 
-    providers, addProvider, deleteProvider, 
-    networks, addNetwork, deleteNetwork, 
+  return {
+    providers, addProvider, deleteProvider,
+    networks, addNetwork, deleteNetwork,
     perks, addPerk, deletePerk,
     isLoaded 
   };

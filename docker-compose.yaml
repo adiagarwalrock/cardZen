@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./cardzen.db:/app/cardzen.db  # Mount the SQLite database file
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://user:password@db:5432/cardzen_db # Example for PostgreSQL, update as needed
+      - SQLITE_DATABASE_PATH=/app/cardzen.db # Path to the SQLite DB inside the container
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cardzen_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

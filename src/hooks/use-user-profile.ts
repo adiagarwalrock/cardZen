@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-const STORAGE_KEY = 'cardzen-user-profile';
+import { getUserProfile, saveUserProfile as saveProfileToDb } from '/workspace/CardZen/src/lib/database';
 
 interface UserProfile {
   name: string;
@@ -14,11 +13,11 @@ export function useUserProfile() {
 
   useEffect(() => {
     try {
-      const storedItem = localStorage.getItem(STORAGE_KEY);
-      if (storedItem) {
-        setProfile(JSON.parse(storedItem));
+      const profileFromDb = getUserProfile();
+      if (profileFromDb) {
+        setProfile(profileFromDb);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load user profile from localStorage', error);
     } finally {
       setIsLoaded(true);
@@ -28,9 +27,9 @@ export function useUserProfile() {
   const saveProfile = (updatedProfile: UserProfile) => {
     try {
       setProfile(updatedProfile);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProfile));
-    } catch (error) {
-      console.error('Failed to save user profile to localStorage', error);
+      saveProfileToDb(updatedProfile);
+    } catch (error: any) {
+      console.error('Failed to save user profile to database', error);
     }
   };
   
