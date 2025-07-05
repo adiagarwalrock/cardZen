@@ -1,38 +1,55 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUserProfile, saveUserProfile as saveProfileToDb } from '/workspace/CardZen/src/lib/database';
 
 interface UserProfile {
   name: string;
+  theme?: string;
+  id?: number;
 }
 
 export function useUserProfile() {
-  const [profile, setProfile] = useState<UserProfile>({ name: '' });
+  const [profile, setProfile] = useState<UserProfile>({ name: '', theme: 'system' });
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const profileFromDb = getUserProfile();
-      if (profileFromDb) {
-        setProfile(profileFromDb);
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/user-profile');
+        const data = await response.json();
+        if (data) {
+          // Ensure we have a name property even if it doesn't exist in DB response
+          setProfile({
+            ...data,
+            name: data.name || ''
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load user profile', error);
+      } finally {
+        setIsLoaded(true);
       }
-    } catch (error: any) {
-      console.error('Failed to load user profile from localStorage', error);
-    } finally {
-      setIsLoaded(true);
-    }
+    };
+
+    fetchProfile();
   }, []);
 
-  const saveProfile = (updatedProfile: UserProfile) => {
+  const saveProfile = async (updatedProfile: UserProfile) => {
     try {
-      setProfile(updatedProfile);
-      saveProfileToDb(updatedProfile);
-    } catch (error: any) {
-      console.error('Failed to save user profile to database', error);
+      const response = await fetch('/api/user-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedProfile),
+      });
+      const data = await response.json();
+      setProfile(data);
+    } catch (error) {
+      console.error('Failed to save user profile', error);
     }
   };
-  
+
   const saveUserName = (name: string) => {
     saveProfile({ ...profile, name });
   };

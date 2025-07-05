@@ -1,35 +1,49 @@
 # Use an official Node.js image as the base image
-FROM node:latest as base
+FROM node:18-alpine AS base
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files
+# Install build dependencies for SQLite3
+RUN apk add --no-cache python3 make g++ sqlite
+
+# Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy the rest of the application code
+# Copy the application code
 COPY . .
 
-# Build the Next.js application
+# Set next environment to production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV production
+
+# Build the Next.js application with sqlite-specific handling
 RUN npm run build
 
 # Use a smaller image for the production build
-FROM node:slim as runner
+FROM node:18-alpine AS runner
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the built application from the base image
+# Install runtime dependencies for SQLite3
+RUN apk add --no-cache sqlite-dev
+
+# Copy necessary files from base image
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./package.json
 COPY --from=base /app/public ./public
-# Copy the SQLite database file
-COPY --from=base /app/cardzen.db ./cardzen.db
+# Initialize an empty SQLite database
+RUN mkdir -p /app/data
+RUN touch /app/data/cardzen.db
 
+# Set environment variables
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
 # Expose the port the app runs on
 EXPOSE 3000

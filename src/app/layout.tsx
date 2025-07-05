@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
+import AppInitializer from '@/components/app-initializer';
 
 export const metadata: Metadata = {
   title: 'CardZen - Smart Credit Card Management',
@@ -37,6 +38,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AppInitializer />
           {children}
           <Toaster />
         </ThemeProvider>

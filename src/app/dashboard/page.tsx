@@ -32,6 +32,7 @@ import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useSecurity } from '@/hooks/use-security';
+import { useCustomLists } from '@/hooks/use-custom-lists';
 
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
   const { userName, isLoaded: userLoaded } = useUserProfile();
   const { isLoaded: securityLoaded, isAuthenticated, isSecurityEnabled } = useSecurity();
+  const { refresh: refreshCustomLists } = useCustomLists();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
@@ -66,12 +68,12 @@ export default function DashboardPage() {
       if (potentialDueDate.getMonth() !== month) {
         potentialDueDate = new Date(year, month + 1, 0);
       }
-      
+
       if (isAfter(today, potentialDueDate)) {
         const nextMonth = new Date(year, month + 1, 1);
         let nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), day);
         if (nextMonthDueDate.getMonth() !== nextMonth.getMonth()) {
-            nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
+          nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
         }
         return nextMonthDueDate;
       } else {
@@ -86,7 +88,7 @@ export default function DashboardPage() {
       .map(card => {
         const nextDueDate = getNextDateForDay(card.dueDate);
         const daysRemaining = differenceInDays(nextDueDate, today);
-        
+
         if (daysRemaining >= 0 && daysRemaining <= alertDays) {
           return {
             ...card,
@@ -98,10 +100,10 @@ export default function DashboardPage() {
       })
       .filter((p): p is UpcomingPayment => p !== null)
       .sort((a, b) => a.daysRemaining - b.daysRemaining);
-      
+
     setUpcomingPayments(payments);
   }, [cards, alertDays, alertSettingsLoaded]);
-  
+
   useEffect(() => {
     if (userLoaded) {
       const hour = new Date().getHours();
@@ -118,7 +120,7 @@ export default function DashboardPage() {
         timeOfDay = 'Good evening';
         emoji = '🌙';
       }
-      
+
       const namePart = userName ? `, ${userName}` : '';
       setGreeting(`${timeOfDay}${namePart}! ${emoji}`);
     }
@@ -126,11 +128,19 @@ export default function DashboardPage() {
 
 
   const handleEdit = (card: CreditCard) => {
+    // Only refresh once when opening the form
+    if (!isFormOpen) {
+      refreshCustomLists();
+    }
     setEditingCard(card);
     setIsFormOpen(true);
   };
 
   const handleAddNew = () => {
+    // Only refresh once when opening the form
+    if (!isFormOpen) {
+      refreshCustomLists();
+    }
     setEditingCard(undefined);
     setIsFormOpen(true);
   };
@@ -143,7 +153,7 @@ export default function DashboardPage() {
     }
     setIsFormOpen(false);
   };
-  
+
   const handleDelete = (cardId: string) => {
     deleteCard(cardId);
   }
@@ -170,19 +180,19 @@ export default function DashboardPage() {
   }, [cards, searchTerm, sortBy]);
 
   if (isFullyLoaded && isSecurityEnabled && !isAuthenticated) {
-     return (
-        <div className="space-y-8">
-             <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                      <Skeleton className="h-9 w-64 mb-2" />
-                      <Skeleton className="h-5 w-80" />
-                  </div>
-             </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
-            </div>
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <Skeleton className="h-9 w-64 mb-2" />
+            <Skeleton className="h-5 w-80" />
+          </div>
         </div>
-     );
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -191,17 +201,17 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             {isFullyLoaded ? (
-                <>
-                  <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
-                  <p className="text-muted-foreground">
-                    Here's an overview of your credit cards.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Skeleton className="h-9 w-64 mb-2" />
-                  <Skeleton className="h-5 w-80" />
-                </>
+              <>
+                <h1 className="text-3xl font-bold tracking-tight">{greeting}</h1>
+                <p className="text-muted-foreground">
+                  Here's an overview of your credit cards.
+                </p>
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-9 w-64 mb-2" />
+                <Skeleton className="h-5 w-80" />
+              </>
             )}
           </div>
           <div className="flex items-center gap-4">
@@ -228,7 +238,7 @@ export default function DashboardPage() {
             </Dialog>
           </div>
         </div>
-        
+
         {isFullyLoaded && cards.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -251,35 +261,35 @@ export default function DashboardPage() {
               </Select>
             </div>
             <div className="flex items-center gap-1 self-end">
-               <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                  <Grid className="h-4 w-4" />
-               </Button>
-               <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                  <List className="h-4 w-4" />
-               </Button>
+              <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
+                <List className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}
       </div>
 
 
-       {isFullyLoaded && upcomingPayments.length > 0 && (
+      {isFullyLoaded && upcomingPayments.length > 0 && (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold tracking-tight">Upcoming Payments</h2>
-            <div className="grid gap-4 md:grid-cols-2">
+          <h2 className="text-xl font-semibold tracking-tight">Upcoming Payments</h2>
+          <div className="grid gap-4 md:grid-cols-2">
             {upcomingPayments.map(card => {
-                const daysRemaining = card.daysRemaining;
-                return (
-                    <Alert key={card.id} variant="destructive">
-                        <Bell className="h-4 w-4" />
-                        <AlertTitle>Due Soon: {card.cardName}</AlertTitle>
-                        <AlertDescription>
-                            Payment is due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} on {format(card.actualDueDate, 'PPP')}.
-                        </AlertDescription>
-                    </Alert>
-                )
+              const daysRemaining = card.daysRemaining;
+              return (
+                <Alert key={card.id} variant="destructive">
+                  <Bell className="h-4 w-4" />
+                  <AlertTitle>Due Soon: {card.cardName}</AlertTitle>
+                  <AlertDescription>
+                    Payment is due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} on {format(card.actualDueDate, 'PPP')}.
+                  </AlertDescription>
+                </Alert>
+              )
             })}
-            </div>
+          </div>
         </div>
       )}
 
@@ -288,67 +298,67 @@ export default function DashboardPage() {
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
         </div>
       )}
-      
+
       {isFullyLoaded && filteredAndSortedCards.length === 0 && (
-         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center mt-8">
-            <h3 className="text-2xl font-bold tracking-tight">
-              {searchTerm ? 'No matching cards' : 'No cards yet'}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'Try adjusting your search or filter.' : 'Add your first credit card to get started.'}
-            </p>
-            {!searchTerm && (
-              <Button onClick={handleAddNew}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Card
-              </Button>
-            )}
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center mt-8">
+          <h3 className="text-2xl font-bold tracking-tight">
+            {searchTerm ? 'No matching cards' : 'No cards yet'}
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            {searchTerm ? 'Try adjusting your search or filter.' : 'Add your first credit card to get started.'}
+          </p>
+          {!searchTerm && (
+            <Button onClick={handleAddNew}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Card
+            </Button>
+          )}
         </div>
       )}
-      
+
       {isFullyLoaded && filteredAndSortedCards.length > 0 && viewMode === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <AnimatePresence>
-                {filteredAndSortedCards.map((card) => (
-                    <motion.div
-                        key={card.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <CreditCardItem
-                            card={card}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
-                    </motion.div>
-                ))}
-            </AnimatePresence>
+          <AnimatePresence>
+            {filteredAndSortedCards.map((card) => (
+              <motion.div
+                key={card.id}
+                layout
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CreditCardItem
+                  card={card}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
       {isFullyLoaded && filteredAndSortedCards.length > 0 && viewMode === 'list' && (
-         <div className="space-y-4">
-            <AnimatePresence>
-                {filteredAndSortedCards.map((card) => (
-                     <motion.div
-                        key={card.id}
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <CreditCardListItem
-                            card={card}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-         </div>
+        <div className="space-y-4">
+          <AnimatePresence>
+            {filteredAndSortedCards.map((card) => (
+              <motion.div
+                key={card.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CreditCardListItem
+                  card={card}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );

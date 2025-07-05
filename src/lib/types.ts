@@ -32,3 +32,9 @@ export interface CustomListItem {
   id: string;
   name: string;
 }
+
+export enum CustomListType {
+  Provider = 'provider',
+  Network = 'network',
+  Perk = 'perk',
+}

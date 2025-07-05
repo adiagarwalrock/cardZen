@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { type CustomListItem, CustomListType } from '@/lib/types';
-import { getCustomLists, saveCustomLists } from '@/lib/database';
 
 const defaultProviders: CustomListItem[] = [
   { id: 'prov-1', name: 'Chase' },
@@ -21,11 +20,11 @@ const defaultNetworks: CustomListItem[] = [
 ];
 
 const defaultPerks: CustomListItem[] = [
-    { id: 'perk-1', name: 'Lounge Access' },
-    { id: 'perk-2', name: 'Travel Insurance' },
-    { id: 'perk-3', name: 'No Foreign Transaction Fees' },
-    { id: 'perk-4', name: 'Extended Warranty' },
-    { id: 'perk-5', name: 'Purchase Protection' },
+  { id: 'perk-1', name: 'Lounge Access' },
+  { id: 'perk-2', name: 'Travel Insurance' },
+  { id: 'perk-3', name: 'No Foreign Transaction Fees' },
+  { id: 'perk-4', name: 'Extended Warranty' },
+  { id: 'perk-5', name: 'Purchase Protection' },
 ];
 
 
@@ -35,49 +34,61 @@ export function useCustomLists() {
   const [perks, setPerks] = useState<CustomListItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    const loadLists = async () => {
-      try {
-        const storedProviders = await getCustomLists(CustomListType.Provider, defaultProviders);
-        setProviders(storedProviders);
+  // Use a flag to prevent duplicate requests
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Track last refresh time to prevent excessive calls
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
 
-        const storedNetworks = await getCustomLists(CustomListType.Network, defaultNetworks);
-        setNetworks(storedNetworks);
+  const fetchLists = async () => {
+    // Prevent multiple concurrent fetches
+    if (isRefreshing) return;
 
-        const storedPerks = await getCustomLists(CustomListType.Perk, defaultPerks);
-        setPerks(storedPerks);
+    // Don't refresh if we've refreshed in the last 5 seconds
+    const now = Date.now();
+    if (now - lastRefreshTime < 5000 && isLoaded) return;
+
+    try {
+      setIsRefreshing(true);
+      const response = await fetch('/api/custom-lists', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      const data = await response.json();
+      if (data) {
+        setProviders(data.providers || defaultProviders);
+        setNetworks(data.networks || defaultNetworks);
+        setPerks(data.perks || defaultPerks);
       }
-
+      setLastRefreshTime(now);
     } catch (error) {
-      console.error('Failed to load custom lists from localStorage', error);
-      // Set defaults on error to prevent app crash
-      setProviders(defaultProviders);
-      setNetworks(defaultNetworks);
-      setPerks(defaultPerks);
+      console.error('Failed to load custom lists', error);
     } finally {
       setIsLoaded(true);
+      setIsRefreshing(false);
     }
-    };
+  };
 
-    loadLists();
+  useEffect(() => {
+    fetchLists();
   }, []);
 
-  const saveProviders = (updatedProviders: CustomListItem[]) => {
-    saveCustomLists(CustomListType.Provider, updatedProviders).then(() => {
-      setProviders(updatedProviders);
-    }).catch(error => console.error('Failed to save providers to database', error));
-  };
-
-  const saveNetworks = (updatedNetworks: CustomListItem[]) => {
-    saveCustomLists(CustomListType.Network, updatedNetworks).then(() => {
-      setNetworks(updatedNetworks);
-    }).catch(error => console.error('Failed to save networks to database', error));
-  };
-
-  const savePerks = (updatedPerks: CustomListItem[]) => {
-    saveCustomLists(CustomListType.Perk, updatedPerks).then(() => {
-      setPerks(updatedPerks);
-    }).catch(error => console.error('Failed to save perks to database', error));
+  const saveLists = async (type: CustomListType, items: CustomListItem[]) => {
+    try {
+      await fetch('/api/custom-lists', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, items }),
+      });
+      // Fetch the updated lists after saving
+      await fetchLists();
+    } catch (error) {
+      console.error('Failed to save custom lists', error);
+    }
   };
 
   const addProvider = (name: string) => {
@@ -85,24 +96,31 @@ export function useCustomLists() {
       return;
     }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
-    saveProviders([...providers, newItem].sort((a,b) => a.name.localeCompare(b.name)));
+    const updatedProviders = [...providers, newItem].sort((a, b) => a.name.localeCompare(b.name));
+    setProviders(updatedProviders); // Optimistic update
+    saveLists(CustomListType.Provider, updatedProviders);
   };
 
   const deleteProvider = (id: string) => {
-    saveProviders(providers.filter((item) => item.id !== id));
+    const updatedProviders = providers.filter((item) => item.id !== id);
+    setProviders(updatedProviders); // Optimistic update
+    saveLists(CustomListType.Provider, updatedProviders);
   };
-  
- const addNetwork = (name: string) => {
-     if (!name.trim() || networks.some(n => n.name.toLowerCase() === name.trim().toLowerCase())) return;
+
+  const addNetwork = (name: string) => {
     if (!name.trim() || networks.some(n => n.name.toLowerCase() === name.trim().toLowerCase())) {
       return;
     }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
-    saveNetworks([...networks, newItem].sort((a,b) => a.name.localeCompare(b.name)));
+    const updatedNetworks = [...networks, newItem].sort((a, b) => a.name.localeCompare(b.name));
+    setNetworks(updatedNetworks); // Optimistic update
+    saveLists(CustomListType.Network, updatedNetworks);
   };
 
   const deleteNetwork = (id: string) => {
-    saveNetworks(networks.filter((item) => item.id !== id));
+    const updatedNetworks = networks.filter((item) => item.id !== id);
+    setNetworks(updatedNetworks); // Optimistic update
+    saveLists(CustomListType.Network, updatedNetworks);
   };
 
   const addPerk = (name: string) => {
@@ -110,17 +128,22 @@ export function useCustomLists() {
       return;
     }
     const newItem: CustomListItem = { id: crypto.randomUUID(), name: name.trim() };
-    savePerks([...perks, newItem].sort((a,b) => a.name.localeCompare(b.name)));
+    const updatedPerks = [...perks, newItem].sort((a, b) => a.name.localeCompare(b.name));
+    setPerks(updatedPerks); // Optimistic update
+    saveLists(CustomListType.Perk, updatedPerks);
   };
 
   const deletePerk = (id: string) => {
-    savePerks(perks.filter((item) => item.id !== id));
+    const updatedPerks = perks.filter((item) => item.id !== id);
+    setPerks(updatedPerks); // Optimistic update
+    saveLists(CustomListType.Perk, updatedPerks);
   };
 
   return {
     providers, addProvider, deleteProvider,
     networks, addNetwork, deleteNetwork,
     perks, addPerk, deletePerk,
-    isLoaded 
+    isLoaded,
+    refresh: fetchLists // Expose refresh function
   };
 }

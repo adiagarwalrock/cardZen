@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { PlusCircle, Search, Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -96,11 +97,11 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
     const url = `https://www.google.com/search?tbm=isch&q=${query}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
-  
+
   async function onSubmit(data: CardFormValues) {
     const saveData = {
-        ...data,
-        imageUrl: data.imageUrl || undefined,
+      ...data,
+      imageUrl: data.imageUrl || undefined,
     }
     await onSave(saveData);
     toast({
@@ -184,7 +185,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
               </FormItem>
             )}
           />
-           <FormField
+          <FormField
             control={form.control}
             name="currency"
             render={({ field }) => (
@@ -221,7 +222,7 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
               </FormItem>
             )}
           />
-           <FormField
+          <FormField
             control={form.control}
             name="apr"
             render={({ field }) => (
@@ -241,38 +242,38 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Card Image URL</FormLabel>
-                   <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <FormControl>
-                        <Input placeholder="https://example.com/image.png" {...field} />
+                      <Input placeholder="https://example.com/image.png" {...field} />
                     </FormControl>
                     <Button type="button" variant="secondary" onClick={handleFindImage} disabled={!provider && !cardName}>
-                        <Search className="h-4 w-4 md:mr-2"/>
-                        <span className="hidden md:inline">Find</span>
+                      <Search className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Find</span>
                     </Button>
-                   </div>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-           <FormField
+          <FormField
             control={form.control}
             name="dueDate"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Due Day of Month</FormLabel>
-                 <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
-                    <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select day" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                            <SelectItem key={day} value={String(day)}>{day}</SelectItem>
-                        ))}
-                    </SelectContent>
-                 </Select>
+                <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -283,147 +284,147 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Statement Day of Month</FormLabel>
-                 <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
-                    <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select day" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                            <SelectItem key={day} value={String(day)}>{day}</SelectItem>
-                        ))}
-                    </SelectContent>
-                 </Select>
+                <Select onValueChange={(v) => field.onChange(parseInt(v, 10))} defaultValue={field.value ? String(field.value) : undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
-        <Separator/>
+
+        <Separator />
 
         <FormField
-            control={form.control}
-            name="perks"
-            render={({ field }) => (
-                <FormItem>
-                     <h3 className="text-lg font-medium mb-2">Perks</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {perks.map((perk) => (
-                            <FormField
-                                key={perk.id}
-                                control={form.control}
-                                name="perks"
-                                render={({ field }) => {
-                                    return (
-                                    <FormItem
-                                        key={perk.id}
-                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                    >
-                                        <FormControl>
-                                        <Checkbox
-                                            checked={field.value?.includes(perk.name)}
-                                            onCheckedChange={(checked) => {
-                                            return checked
-                                                ? field.onChange([...field.value, perk.name])
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                    (value) => value !== perk.name
-                                                    )
-                                                )
-                                            }}
-                                        />
-                                        </FormControl>
-                                        <FormLabel className="font-normal text-sm">
-                                            {perk.name}
-                                        </FormLabel>
-                                    </FormItem>
+          control={form.control}
+          name="perks"
+          render={({ field }) => (
+            <FormItem>
+              <h3 className="text-lg font-medium mb-2">Perks</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {perks.map((perk) => (
+                  <FormField
+                    key={perk.id}
+                    control={form.control}
+                    name="perks"
+                    render={({ field }) => {
+                      return (
+                        <FormItem
+                          key={perk.id}
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(perk.name)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...field.value, perk.name])
+                                  : field.onChange(
+                                    field.value?.filter(
+                                      (value) => value !== perk.name
                                     )
-                                }}
+                                  )
+                              }}
                             />
-                        ))}
-                     </div>
-                     <FormMessage/>
-                </FormItem>
-            )}
+                          </FormControl>
+                          <FormLabel className="font-normal text-sm">
+                            {perk.name}
+                          </FormLabel>
+                        </FormItem>
+                      )
+                    }}
+                  />
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
         />
 
-        <Separator/>
+        <Separator />
 
         <div>
-            <h3 className="text-lg font-medium mb-4">Quantitative Rewards (Cashback/Points)</h3>
-            <div className="space-y-4">
-                 {fields.map((field, index) => (
-                    <div key={field.id} className="flex gap-2 items-end p-4 border rounded-md relative">
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1">
-                             <FormField
-                                control={form.control}
-                                name={`benefits.${index}.name`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Reward Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g. Dining" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={form.control}
-                                name={`benefits.${index}.value`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Value</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" placeholder="e.g. 3" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={form.control}
-                                name={`benefits.${index}.type`}
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Type</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="cashback">Cashback (%)</SelectItem>
-                                        <SelectItem value="points">Points (x)</SelectItem>
-                                    </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                         </div>
-                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4"/>
-                            <span className="sr-only">Remove benefit</span>
-                        </Button>
-                    </div>
-                ))}
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ id: crypto.randomUUID(), name: '', value: 0, type: 'cashback' })}
-                >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Reward
+          <h3 className="text-lg font-medium mb-4">Quantitative Rewards (Cashback/Points)</h3>
+          <div className="space-y-4">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex gap-2 items-end p-4 border rounded-md relative">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1">
+                  <FormField
+                    control={form.control}
+                    name={`benefits.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reward Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Dining" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`benefits.${index}.value`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Value</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 3" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`benefits.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="cashback">Cashback (%)</SelectItem>
+                            <SelectItem value="points">Points (x)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Remove benefit</span>
                 </Button>
-            </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ id: crypto.randomUUID(), name: '', value: 0, type: 'cashback' })}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Reward
+            </Button>
+          </div>
         </div>
-        
-        <Separator/>
+
+        <Separator />
 
         <FormField
           control={form.control}
@@ -444,8 +445,8 @@ export function CardForm({ card, onSave, onDone }: CardFormProps) {
         />
 
         <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
-            <Button type="submit">{card ? 'Update' : 'Add'} Card</Button>
+          <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
+          <Button type="submit">{card ? 'Update' : 'Add'} Card</Button>
         </div>
       </form>
     </Form>

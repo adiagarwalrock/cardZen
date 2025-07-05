@@ -22,7 +22,7 @@ export async function getSmartRecommendation(
   if (!cardDetails || cardDetails === '[]') {
     return { error: 'No credit cards found. Please add a card first.' };
   }
-   if (!spendingHabits || spendingHabits === '[]') {
+  if (!spendingHabits || spendingHabits === '[]') {
     return { error: 'No spending habits found. Please add your spending habits in settings.' };
   }
 
@@ -43,5 +43,24 @@ export async function getSmartRecommendation(
     };
   } catch (e) {
     return { error: 'An unexpected error occurred. Please try again.' };
+  }
+}
+
+/**
+ * Initialize the database on application startup
+ * This is a server action that can be called from a client component
+ */
+export async function initDbOnStartup() {
+  try {
+    // Use a relative URL instead of trying to construct an absolute URL
+    // This avoids issues with URL parsing and environment variables
+    const response = await fetch('/api/init-db');
+    if (!response.ok) {
+      console.error('Failed to initialize database:', await response.text());
+    } else {
+      console.log('Database initialized successfully');
+    }
+  } catch (error) {
+    console.error('Error initializing database:', error);
   }
 }
