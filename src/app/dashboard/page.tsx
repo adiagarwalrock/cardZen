@@ -31,7 +31,26 @@ import { CreditCardListItem } from '@/components/credit-card-list-item';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { useSecurity } from '@/hooks/use-security';
+
+function DateTimeDisplay() {
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="text-right hidden sm:block">
+      <p className="font-semibold text-foreground">{format(currentDateTime, 'h:mm:ss a')}</p>
+      <p className="text-sm text-muted-foreground">{format(currentDateTime, 'EEEE, MMMM do')}</p>
+    </div>
+  );
+}
 
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
@@ -42,6 +61,8 @@ export default function DashboardPage() {
   const { cards, addCard, updateCard, deleteCard, isLoaded } = useCreditCards();
   const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
   const { userName, isLoaded: userLoaded } = useUserProfile();
+  const { isLoaded: securityLoaded, isAuthenticated, isSecurityEnabled } = useSecurity();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +71,7 @@ export default function DashboardPage() {
   const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
   const [greeting, setGreeting] = useState('');
 
-  const isFullyLoaded = isLoaded && alertSettingsLoaded && userLoaded;
+  const isFullyLoaded = isLoaded && alertSettingsLoaded && userLoaded && securityLoaded;
 
   useEffect(() => {
     if (!cards || !alertSettingsLoaded) return;
@@ -167,10 +188,26 @@ export default function DashboardPage() {
       });
   }, [cards, searchTerm, sortBy]);
 
+  if (isFullyLoaded && isSecurityEnabled && !isAuthenticated) {
+     return (
+        <div className="space-y-8">
+             <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                      <Skeleton className="h-9 w-64 mb-2" />
+                      <Skeleton className="h-5 w-80" />
+                  </div>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[350px] w-full" />)}
+            </div>
+        </div>
+     );
+  }
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             {isFullyLoaded ? (
                 <>
@@ -186,7 +223,8 @@ export default function DashboardPage() {
                 </>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {isFullyLoaded && <DateTimeDisplay />}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNew}>

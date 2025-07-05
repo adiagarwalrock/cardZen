@@ -3,8 +3,9 @@
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Save, Trash2, X } from 'lucide-react';
+import { LogOut, PlusCircle, Save, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { useSpendingHabits } from '@/hooks/use-spending-habits';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,20 @@ import { Slider } from '@/components/ui/slider';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useAlertSettings } from '@/hooks/use-alert-settings';
 import { Label } from '@/components/ui/label';
+import { useSecurity } from '@/hooks/use-security';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const settingsSchema = z.object({
   habits: z.array(
@@ -50,6 +65,8 @@ export default function SettingsPage() {
   
   const { userName, saveUserName, isLoaded: userLoaded } = useUserProfile();
   const { alertDays, saveAlertDays, isLoaded: alertsLoaded } = useAlertSettings();
+  const { isSecurityEnabled, hasPassword, setPassword, removePassword, toggleSecurity, logout } = useSecurity();
+  const router = useRouter();
 
   const { toast } = useToast();
   const [newProvider, setNewProvider] = useState('');
@@ -59,6 +76,8 @@ export default function SettingsPage() {
   const [currentUserName, setCurrentUserName] = useState('');
   const [currentAlertDays, setCurrentAlertDays] = useState(alertDays);
   const [greeting, setGreeting] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -168,6 +187,40 @@ export default function SettingsPage() {
     });
   };
 
+  const handleSetPassword = () => {
+    if (newPassword && newPassword === confirmNewPassword) {
+      setPassword(newPassword);
+      toast({
+        title: hasPassword ? 'Password Changed' : 'Password Set',
+        description: hasPassword
+          ? 'Your password has been updated.'
+          : 'Security has been enabled.',
+      });
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Passwords do not match or are empty.',
+      });
+    }
+  };
+
+  const handleRemovePassword = () => {
+    removePassword();
+    toast({
+      title: 'Security Disabled',
+      description: 'Password has been removed.',
+    });
+  };
+  
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
@@ -220,6 +273,99 @@ export default function SettingsPage() {
                         Save Alert Settings
                     </Button>
                 </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Security</CardTitle>
+                <CardDescription>Manage your application password.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="security-switch" className="text-base">Enable Password Protection</Label>
+                        <p className="text-sm text-muted-foreground">
+                        Require a password to access your dashboard.
+                        </p>
+                    </div>
+                    <Switch
+                        id="security-switch"
+                        checked={isSecurityEnabled}
+                        onCheckedChange={toggleSecurity}
+                        disabled={!hasPassword}
+                        aria-label="Toggle password protection"
+                    />
+                </div>
+                
+                <Separator/>
+
+                <div className="space-y-4">
+                    <h3 className="font-medium">{hasPassword ? 'Change Password' : 'Set a Password'}</h3>
+                    <p className="text-sm text-muted-foreground">
+                        {hasPassword ? 'Enter a new password to update your security.' : 'Setting a password will automatically enable security.'}
+                    </p>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input id="confirm-password" type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} />
+                    </div>
+                     <div className="flex justify-between items-center flex-wrap gap-2">
+                        <Button onClick={handleSetPassword}>
+                            <Save className="mr-2 h-4 w-4" />
+                            {hasPassword ? 'Change Password' : 'Set Password'}
+                        </Button>
+                        {hasPassword && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className="text-destructive hover:text-destructive">Remove Password</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        This will permanently remove your password and disable security. You can set a new password later.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRemovePassword} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                            Yes, remove password
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
+                </div>
+
+                {isSecurityEnabled && (
+                    <div className="pt-6 border-t">
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Log Out
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    You will be required to enter your password again to access the dashboard.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
             </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   BarChart,
@@ -8,12 +8,13 @@ import {
   Lightbulb,
   Settings,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/logo';
+import { useSecurity } from '@/hooks/use-security';
 
 const navItems = [
   { href: '/dashboard', label: 'My Cards', icon: Home },
@@ -28,11 +29,34 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  
+  const { isLoaded, isSecurityEnabled, isAuthenticated } = useSecurity();
   
   const activeItem = navItems.find(item => pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard'));
   const activePath = activeItem ? activeItem.href : pathname;
   
   const [hoveredPath, setHoveredPath] = useState(activePath);
+
+  useEffect(() => {
+    if (isLoaded && isSecurityEnabled && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isLoaded, isSecurityEnabled, isAuthenticated, router]);
+
+  useEffect(() => {
+    setHoveredPath(activePath);
+  }, [activePath]);
+
+  // Render a loading state while checking auth to prevent flicker
+  if (!isLoaded || (isSecurityEnabled && !isAuthenticated)) {
+      return (
+          <div className="flex flex-col gap-4 items-center justify-center min-h-screen bg-background">
+              <Logo />
+              <p className="text-muted-foreground">Securing your session...</p>
+          </div>
+      );
+  }
 
   return (
     <div className="min-h-screen w-full">
