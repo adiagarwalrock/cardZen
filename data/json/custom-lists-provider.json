@@ -1,0 +1,34 @@
+[
+  {
+    "id": "amex",
+    "name": "American Express"
+  },
+  {
+    "id": "bank-of-america",
+    "name": "Bank of America"
+  },
+  {
+    "id": "capital-one",
+    "name": "Capital One"
+  },
+  {
+    "id": "chase",
+    "name": "Chase"
+  },
+  {
+    "id": "citi",
+    "name": "Citibank"
+  },
+  {
+    "id": "discover",
+    "name": "Discover"
+  },
+  {
+    "id": "f9e6ea48-7800-48d0-8943-a4fefa86c1e7",
+    "name": "SBI"
+  },
+  {
+    "id": "wells-fargo",
+    "name": "Wells Fargo"
+  }
+]

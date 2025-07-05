@@ -1,0 +1,42 @@
+[
+  {
+    "id": "airport-lounge",
+    "name": "Airport Lounge Access"
+  },
+  {
+    "id": "travel-credit",
+    "name": "Annual Travel Credit"
+  },
+  {
+    "id": "purchase-protection",
+    "name": "Purchase Protection"
+  },
+  {
+    "id": "extended-warranty",
+    "name": "Extended Warranty"
+  },
+  {
+    "id": "rental-insurance",
+    "name": "Rental Car Insurance"
+  },
+  {
+    "id": "tsa-precheck",
+    "name": "TSA PreCheck/Global Entry Credit"
+  },
+  {
+    "id": "no-foreign-transaction",
+    "name": "No Foreign Transaction Fees"
+  },
+  {
+    "id": "hotel-status",
+    "name": "Hotel Elite Status"
+  },
+  {
+    "id": "concierge",
+    "name": "Concierge Service"
+  },
+  {
+    "id": "cell-phone-protection",
+    "name": "Cell Phone Protection"
+  }
+]

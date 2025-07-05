@@ -33,3 +33,51 @@ CardZen employs a clean, modern, and user-friendly design with a focus on clarit
 ## Getting Started
 
 To get started with CardZen, please refer to the documentation in `/docs/blueprint.md`.
+
+## Deployment
+
+CardZen can be easily deployed using Docker. Follow these steps to deploy the application:
+
+### Prerequisites
+
+- Docker and Docker Compose installed on your server
+- Git (optional, for cloning the repository)
+
+### Deployment Steps
+
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone https://github.com/yourusername/cardZen.git
+   cd cardZen
+   ```
+
+2. **Deploy with the deployment script**:
+   ```bash
+   ./deploy.sh
+   ```
+
+   This script will:
+   - Stop any existing containers
+   - Build and start the new containers
+   - Verify the deployment was successful
+
+3. **Access the application**:
+   Once deployed, the application will be available at `http://your-server-ip:3000`
+
+### Manual Deployment
+
+If you prefer to deploy manually:
+
+1. **Build and start the containers**:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+2. **Check the logs if needed**:
+   ```bash
+   docker-compose logs -f
+   ```
+
+### Data Persistence
+
+Your data is stored in a Docker volume named `cardzen_data` which persists across container restarts and updates. To back up your data, you can use Docker volume backup tools.

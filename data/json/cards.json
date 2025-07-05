@@ -1,0 +1,20 @@
+[
+  {
+    "provider": "SBI",
+    "network": "Visa",
+    "cardName": "Platinum",
+    "imageUrl": "https://www.sbicard.com/sbi-card-en/assets/media/images/personal/credit-cards/rewards/card-faces/sbi-platinum-card.png",
+    "limit": 10000,
+    "currency": "INR",
+    "annualFee": 1000,
+    "apr": 0,
+    "dueDate": 3,
+    "statementDate": 1,
+    "enableAlerts": true,
+    "perks": [
+      "Airport Lounge Access"
+    ],
+    "benefits": [],
+    "id": "165d0b6f-430a-4414-b5d7-4f0cc5021e8c"
+  }
+]

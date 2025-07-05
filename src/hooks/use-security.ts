@@ -8,6 +8,8 @@ const AUTH_SESSION_KEY = 'cardzen-authenticated';
 interface SecuritySettings {
     isEnabled: boolean;
     password?: string;
+    biometricEnabled?: boolean;
+    pinEnabled?: boolean;
 }
 
 export function useSecurity() {
@@ -16,26 +18,86 @@ export function useSecurity() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedItem = localStorage.getItem(STORAGE_KEY);
-      if (storedItem) {
-        setSettings(JSON.parse(storedItem));
+    const fetchSettings = async () => {
+      try {
+        // First try to get settings from the API
+        const response = await fetch('/api/security-settings');
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Merge with local security settings (password is only stored locally)
+          const storedItem = localStorage.getItem(STORAGE_KEY);
+          if (storedItem) {
+            const localSettings = JSON.parse(storedItem);
+            setSettings({
+              ...data,
+              password: localSettings.password,
+              isEnabled: localSettings.isEnabled
+            });
+          } else {
+            setSettings({ ...data, isEnabled: false });
+          }
+        } else {
+          // Fallback to localStorage if API fails
+          const storedItem = localStorage.getItem(STORAGE_KEY);
+          if (storedItem) {
+            setSettings(JSON.parse(storedItem));
+          }
+        }
+        
+        const sessionAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
+        setIsAuthenticated(sessionAuth);
+      } catch (error) {
+        console.error('Failed to load security settings', error);
+        
+        // Fallback to localStorage if API fails
+        try {
+          const storedItem = localStorage.getItem(STORAGE_KEY);
+          if (storedItem) {
+            setSettings(JSON.parse(storedItem));
+          }
+          
+          const sessionAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
+          setIsAuthenticated(sessionAuth);
+        } catch (localError) {
+          console.error('Failed to load security settings from localStorage', localError);
+        }
+      } finally {
+        setIsLoaded(true);
       }
-      
-      const sessionAuth = sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
-      setIsAuthenticated(sessionAuth);
+    };
 
-    } catch (error) {
-      console.error('Failed to load security settings', error);
-    } finally {
-      setIsLoaded(true);
-    }
+    fetchSettings();
   }, []);
   
-  const saveSettings = useCallback((updatedSettings: SecuritySettings) => {
+  const saveSettings = useCallback(async (updatedSettings: SecuritySettings) => {
     try {
+      // Optimistically update UI
       setSettings(updatedSettings);
+      
+      // Always save password and isEnabled locally
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
+      
+      // Save biometric and PIN settings to the API if they exist
+      if (updatedSettings.biometricEnabled !== undefined || updatedSettings.pinEnabled !== undefined) {
+        const apiSettings = {
+          biometricEnabled: updatedSettings.biometricEnabled,
+          pinEnabled: updatedSettings.pinEnabled
+        };
+        
+        const response = await fetch('/api/security-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiSettings),
+        });
+        
+        if (!response.ok) {
+          console.warn('Failed to save security settings to API');
+        }
+      }
     } catch (error) {
       console.error('Failed to save security settings', error);
     }
