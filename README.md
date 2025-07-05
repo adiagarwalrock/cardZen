@@ -1,3 +1,10 @@
+<a href="https://studio.firebase.google.com/import?url=https%3A%2F%2Fgithub.com%2Fadiagarwalrock%2FcardZen">
+  <img
+    height="32"
+    alt="Continue in Firebase Studio"
+    src="https://cdn.firebasestudio.dev/btn/continue_blue_32.svg">
+</a>
+
 # CardZen
 
 CardZen is a comprehensive credit card management application designed to help you effortlessly manage your credit cards, stay on top of due dates, and maximize your rewards and benefits.
