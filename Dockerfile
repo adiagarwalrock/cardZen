@@ -43,6 +43,17 @@ RUN mkdir -p /app/data/json
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Create non-root user and give proper permissions
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S -u 1001 -G nodejs nextjs && \
+    chown -R nextjs:nodejs /app
+
+# Set the working directory permissions
+RUN chown -R nextjs:nodejs /app/data
+
+# Change to non-root user
+USER nextjs
+
 # Expose the port the app runs on
 EXPOSE 3000
 
