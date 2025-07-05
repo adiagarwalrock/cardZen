@@ -33,25 +33,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useSecurity } from '@/hooks/use-security';
 
-function DateTimeDisplay() {
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000); // Update every second
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="text-right hidden sm:block">
-      <p className="font-semibold text-foreground">{format(currentDateTime, 'h:mm:ss a')}</p>
-      <p className="text-sm text-muted-foreground">{format(currentDateTime, 'EEEE, MMMM do')}</p>
-    </div>
-  );
-}
-
 interface UpcomingPayment extends CreditCard {
   daysRemaining: number;
   actualDueDate: Date;
@@ -224,7 +205,6 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            {isFullyLoaded && <DateTimeDisplay />}
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNew}>

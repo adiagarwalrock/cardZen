@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -22,6 +23,36 @@ const navItems = [
   { href: '/dashboard/recommend', label: 'Smart Recommend', icon: Lightbulb },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
+
+function DateTimeDisplay() {
+  const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentDateTime(new Date());
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!currentDateTime) {
+    return (
+      <div className="text-right w-[150px]">
+        <div className="h-5 w-24 bg-muted-foreground/20 rounded-md animate-pulse ml-auto" />
+        <div className="h-4 w-32 bg-muted-foreground/20 rounded-md animate-pulse mt-1 ml-auto" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-right w-[150px]">
+      <p className="font-semibold text-foreground">{format(currentDateTime, 'h:mm:ss a')}</p>
+      <p className="text-sm text-muted-foreground">{format(currentDateTime, 'EEEE, MMMM do')}</p>
+    </div>
+  );
+}
+
 
 export default function DashboardLayout({
   children,
@@ -62,7 +93,8 @@ export default function DashboardLayout({
     <div className="min-h-screen w-full">
       <header className="flex h-20 items-center justify-between px-6">
         <Logo />
-         <div className="hidden md:block">
+         <div className="hidden md:flex items-center gap-4">
+           <DateTimeDisplay />
            <ThemeToggle />
          </div>
       </header>
