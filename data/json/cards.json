@@ -4,7 +4,7 @@
     "network": "Visa",
     "cardName": "Platinum",
     "imageUrl": "https://www.sbicard.com/sbi-card-en/assets/media/images/personal/credit-cards/rewards/card-faces/sbi-platinum-card.png",
-    "limit": 10000,
+    "limit": 100003,
     "currency": "INR",
     "annualFee": 1000,
     "apr": 0,
@@ -16,5 +16,22 @@
     ],
     "benefits": [],
     "id": "165d0b6f-430a-4414-b5d7-4f0cc5021e8c"
+  },
+  {
+    "provider": "Capital One",
+    "network": "Discover",
+    "cardName": "Platinum duo",
+    "limit": 3232331,
+    "currency": "USD",
+    "annualFee": 23,
+    "apr": 2,
+    "dueDate": 2,
+    "statementDate": 4,
+    "enableAlerts": true,
+    "perks": [
+      "TSA PreCheck/Global Entry Credit"
+    ],
+    "benefits": [],
+    "id": "bc1c1144-e7f9-48ce-bbd4-e8a18bcc4df1"
   }
 ]

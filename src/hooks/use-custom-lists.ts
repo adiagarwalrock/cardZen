@@ -140,10 +140,16 @@ export function useCustomLists() {
   };
 
   return {
-    providers, addProvider, deleteProvider,
-    networks, addNetwork, deleteNetwork,
-    perks, addPerk, deletePerk,
+    providers,
+    addProvider,
+    deleteProvider,
+    networks,
+    addNetwork,
+    deleteNetwork,
+    perks,
+    addPerk,
+    deletePerk,
     isLoaded,
-    refresh: fetchLists // Expose refresh function
+    refreshLists: fetchLists, // Expose refresh function
   };
 }

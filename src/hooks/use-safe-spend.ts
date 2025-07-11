@@ -1,107 +1,90 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-const STORAGE_KEY = 'cardzen-safe-spend-percentage';
+const STORAGE_KEY = "cardzen-safe-spend-percentage";
 const DEFAULT_PERCENTAGE = 30;
 
 export function useSafeSpend() {
-  const [safeSpendPercentage, setSafeSpendPercentage] = useState<number>(DEFAULT_PERCENTAGE);
+  const [safeSpendPercentage, setSafeSpendPercentage] =
+    useState<number>(DEFAULT_PERCENTAGE);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    const fetchSafeSpend = async () => {
-      try {
-        // First try to get the percentage from the API (database)
-        const response = await fetch('/api/safe-spend');
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data && typeof data.percentage === 'number') {
-            setSafeSpendPercentage(data.percentage);
-          } else {
-            // Fallback to localStorage if API doesn't return valid data
-            fallbackToLocalStorage();
-          }
-        } else {
-          // Fallback to localStorage if API fails
-          fallbackToLocalStorage();
+  // 1. DRY localStorage fallback
+  const fallbackToLocalStorage = useCallback(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored !== null) {
+        const value = parseInt(stored, 10);
+        if (!isNaN(value) && value >= 0 && value <= 100) {
+          setSafeSpendPercentage(value);
+          return;
         }
-      } catch (error) {
-        console.error('Failed to load safe spend percentage from API', error);
-        // Fallback to localStorage if API fails
-        fallbackToLocalStorage();
-      } finally {
-        setIsLoaded(true);
       }
-    };
-
-    const fallbackToLocalStorage = () => {
-      try {
-        const storedItem = localStorage.getItem(STORAGE_KEY);
-        if (storedItem) {
-          const parsedValue = parseInt(storedItem, 10);
-          if (!isNaN(parsedValue) && parsedValue >= 0 && parsedValue <= 100) {
-            setSafeSpendPercentage(parsedValue);
-          } else {
-            setSafeSpendPercentage(DEFAULT_PERCENTAGE);
-          }
-        } else {
-          setSafeSpendPercentage(DEFAULT_PERCENTAGE);
-        }
-      } catch (error) {
-        console.error('Failed to load safe spend percentage from localStorage', error);
-        setSafeSpendPercentage(DEFAULT_PERCENTAGE);
-      }
-    };
-
-    fetchSafeSpend();
+    } catch (err) {
+      console.error("LocalStorage parse error", err);
+    }
+    // default if anything’s wrong
+    setSafeSpendPercentage(DEFAULT_PERCENTAGE);
   }, []);
 
-  const saveSafeSpendPercentage = async (percentage: number) => {
+  // 2. Memoized fetch that always has the same identity
+  const fetchSafeSpend = useCallback(async () => {
     try {
-      const valueToSave = Math.max(0, Math.min(100, percentage));
+      const res = await fetch("/api/safe-spend");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.percentage === "number") {
+          setSafeSpendPercentage(data.percentage);
+        } else {
+          fallbackToLocalStorage();
+        }
+      } else {
+        fallbackToLocalStorage();
+      }
+    } catch (err) {
+      console.error("Failed loading from API", err);
+      fallbackToLocalStorage();
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [fallbackToLocalStorage]);
 
-      // Optimistically update UI
-      setSafeSpendPercentage(valueToSave);
+  // 3. Run it only once, on mount
+  useEffect(() => {
+    fetchSafeSpend();
+  }, [fetchSafeSpend]);
 
-      // Try to save to the database first
-      const response = await fetch('/api/safe-spend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+  // 4. Memoized save
+  const saveSafeSpendPercentage = useCallback(async (percentage: number) => {
+    // clamp
+    const valueToSave = Math.max(0, Math.min(100, percentage));
+    setSafeSpendPercentage(valueToSave);
+
+    try {
+      const res = await fetch("/api/safe-spend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ percentage: valueToSave }),
       });
-
-      if (!response.ok) {
-        console.warn('Failed to save safe spend percentage to database');
+      if (!res.ok) {
+        console.warn("API save failed, falling back to localStorage");
       }
-
-      // Also save to localStorage as backup
-      localStorage.setItem(STORAGE_KEY, valueToSave.toString());
-    } catch (error) {
-      console.error('Failed to save safe spend percentage', error);
-      // Still save to localStorage even if API fails
-      const valueToSave = Math.max(0, Math.min(100, percentage));
+    } catch (err) {
+      console.error("Error saving to API", err);
+    } finally {
+      // always back up locally
       localStorage.setItem(STORAGE_KEY, valueToSave.toString());
     }
-  };
+  }, []);
 
-  // Function to refresh safe spend percentage from the database
-  const refreshSafeSpend = async () => {
-    try {
-      const response = await fetch('/api/safe-spend');
-      if (response.ok) {
-        const data = await response.json();
-        if (data && typeof data.percentage === 'number') {
-          setSafeSpendPercentage(data.percentage);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to refresh safe spend percentage', error);
-    }
-  };
+  // 5. Expose a stable refresh
+  const refreshSafeSpend = fetchSafeSpend;
 
-  return { safeSpendPercentage, saveSafeSpendPercentage, refreshSafeSpend, isLoaded };
+  return {
+    safeSpendPercentage,
+    saveSafeSpendPercentage,
+    refreshSafeSpend,
+    isLoaded,
+  };
 }

@@ -17,26 +17,26 @@ export default function DataPreloader() {
     const { isLoaded: isProfileLoaded } = useUserProfile();
 
     useEffect(() => {
-        // Preload all data
-        const preloadData = async () => {
-            try {
-                console.log('Preloading application data...');
+      // Preload all data
+      const preloadData = async () => {
+        try {
+          console.log("Preloading application data...");
 
-                // Load all data in parallel
-                await Promise.all([
-                    refreshCards(),
-                    refreshLists(),
-                    refreshSafeSpend()
-                ]);
+          // Load all data in parallel
+          await Promise.all([
+            refreshCards(),
+            refreshLists(),
+            refreshSafeSpend(),
+          ]);
 
-                console.log('Data preloading complete');
-            } catch (error) {
-                console.error('Error preloading data:', error);
-            }
-        };
+          console.log("Data preloading complete");
+        } catch (error) {
+          console.error("Error preloading data:", error);
+        }
+      };
 
-        preloadData();
-    }, [refreshCards, refreshLists, refreshSafeSpend]);
+      preloadData();
+    }, []);
 
     // This component doesn't render anything
     return null;

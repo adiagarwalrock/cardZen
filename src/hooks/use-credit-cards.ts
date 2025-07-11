@@ -1,121 +1,107 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { type CreditCard } from '@/lib/types';
+import { useState, useEffect, useCallback } from "react";
+import { type CreditCard } from "@/lib/types";
 
-// Fallback key for local storage
-const STORAGE_KEY = 'cardzen-credit-cards';
+const STORAGE_KEY = "cardzen-credit-cards";
 
 export function useCreditCards() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Fetch cards from API (which gets from DB)
-  useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        // First try to get cards from the API (database)
-        const response = await fetch('/api/cards');
-
-        if (response.ok) {
-          const data = await response.json();
-          setCards(data || []);
-        } else {
-          // Fallback to localStorage if API fails
-          const storedItems = localStorage.getItem(STORAGE_KEY);
-          if (storedItems) {
-            const parsedItems = JSON.parse(storedItems);
-            // Simple migration for old data structure
-            const migratedCards = parsedItems.map((card: any) => {
-              const newCard = { ...card };
-              if (typeof card.dueDate === 'string' && card.dueDate) {
-                newCard.dueDate = new Date(card.dueDate).getDate();
-              }
-              if (typeof card.statementDate === 'string' && card.statementDate) {
-                newCard.statementDate = new Date(card.statementDate).getDate();
-              }
-              return newCard;
-            });
-            setCards(migratedCards);
-          }
+  // 1. DRY fallback
+  const loadFromStorage = useCallback(() => {
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (!json) return;
+    try {
+      const parsed = JSON.parse(json) as any[];
+      const migrated = parsed.map((card) => {
+        const c: any = { ...card };
+        if (typeof card.dueDate === "string") {
+          c.dueDate = new Date(card.dueDate).getDate();
         }
-      } catch (error) {
-        console.error('Failed to load cards', error);
-
-        // Fallback to localStorage if API fails
-        try {
-          const storedItems = localStorage.getItem(STORAGE_KEY);
-          if (storedItems) {
-            setCards(JSON.parse(storedItems));
-          }
-        } catch (localError) {
-          console.error('Failed to load cards from localStorage', localError);
+        if (typeof card.statementDate === "string") {
+          c.statementDate = new Date(card.statementDate).getDate();
         }
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    fetchCards();
+        return c as CreditCard;
+      });
+      setCards(migrated);
+    } catch {
+      console.error("Failed to parse stored cards");
+    }
   }, []);
 
-  const saveCards = async (updatedCards: CreditCard[]) => {
+  // 2. Memoized fetch
+  const fetchCards = useCallback(async () => {
     try {
-      // Optimistically update UI
-      setCards(updatedCards);
+      const res = await fetch("/api/cards");
+      if (res.ok) {
+        const data: CreditCard[] = await res.json();
+        setCards(data);
+      } else {
+        loadFromStorage();
+      }
+    } catch (err) {
+      console.error("Fetch failed, loading from storage", err);
+      loadFromStorage();
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [loadFromStorage]);
 
-      // Try to save to the database first
-      const response = await fetch('/api/cards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedCards),
+  // 3. Run once on mount
+  useEffect(() => {
+    fetchCards();
+  }, [fetchCards]);
+
+  const saveCards = useCallback(async (updated: CreditCard[]) => {
+    setCards(updated);
+    try {
+      const res = await fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to save to database');
-      }
-
-      // Also save to localStorage as backup
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedCards));
-    } catch (error) {
-      console.error('Failed to save cards', error);
-      // Still save to localStorage even if API fails
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedCards));
+      if (!res.ok) throw new Error();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (err) {
+      console.error("Save failed, falling back to storage", err);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-  };
+  }, []);
 
-  const addCard = (card: Omit<CreditCard, 'id'>): CreditCard => {
-    const newCard: CreditCard = { ...card, id: crypto.randomUUID() };
-    saveCards([...cards, newCard]);
-    return newCard;
-  };
+  const addCard = useCallback(
+    (card: Omit<CreditCard, "id">) => {
+      const newCard = { ...card, id: crypto.randomUUID() };
+      saveCards([...cards, newCard]);
+      return newCard;
+    },
+    [cards, saveCards]
+  );
 
-  const updateCard = (updatedCard: CreditCard) => {
-    const updatedCards = cards.map((card) =>
-      card.id === updatedCard.id ? updatedCard : card
-    );
-    saveCards(updatedCards);
-  };
+  const updateCard = useCallback(
+    (updatedCard: CreditCard) => {
+      saveCards(cards.map((c) => (c.id === updatedCard.id ? updatedCard : c)));
+    },
+    [cards, saveCards]
+  );
 
-  const deleteCard = (cardId: string) => {
-    const updatedCards = cards.filter((card) => card.id !== cardId);
-    saveCards(updatedCards);
-  };
+  const deleteCard = useCallback(
+    (id: string) => {
+      saveCards(cards.filter((c) => c.id !== id));
+    },
+    [cards, saveCards]
+  );
 
-  // Function to refresh cards from the database
-  const refreshCards = async () => {
-    try {
-      const response = await fetch('/api/cards');
-      if (response.ok) {
-        const data = await response.json();
-        setCards(data || []);
-      }
-    } catch (error) {
-      console.error('Failed to refresh cards', error);
-    }
-  };
+  // Expose the same memoized fetch
+  const refreshCards = fetchCards;
 
-  return { cards, addCard, updateCard, deleteCard, refreshCards, isLoaded };
+  return {
+    cards,
+    isLoaded,
+    addCard,
+    updateCard,
+    deleteCard,
+    refreshCards,
+  };
 }

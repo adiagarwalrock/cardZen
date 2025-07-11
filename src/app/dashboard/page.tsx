@@ -44,17 +44,22 @@ export default function DashboardPage() {
   const { alertDays, isLoaded: alertSettingsLoaded } = useAlertSettings();
   const { userName, isLoaded: userLoaded } = useUserProfile();
   const { isLoaded: securityLoaded, isAuthenticated, isSecurityEnabled } = useSecurity();
-  const { refresh: refreshCustomLists } = useCustomLists();
+  const { refreshLists: refreshCustomLists } = useCustomLists();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingCard, setEditingCard] = useState<CreditCard | undefined>(undefined);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('cardName');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
-  const [greeting, setGreeting] = useState('');
+  const [editingCard, setEditingCard] = useState<CreditCard | undefined>(
+    undefined
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("cardName");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>(
+    []
+  );
+  const [greeting, setGreeting] = useState("");
 
-  const isFullyLoaded = isLoaded && alertSettingsLoaded && userLoaded && securityLoaded;
+  const isFullyLoaded =
+    isLoaded && alertSettingsLoaded && userLoaded && securityLoaded;
 
   useEffect(() => {
     if (!cards || !alertSettingsLoaded) return;
@@ -71,21 +76,29 @@ export default function DashboardPage() {
 
       if (isAfter(today, potentialDueDate)) {
         const nextMonth = new Date(year, month + 1, 1);
-        let nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), day);
+        let nextMonthDueDate = new Date(
+          nextMonth.getFullYear(),
+          nextMonth.getMonth(),
+          day
+        );
         if (nextMonthDueDate.getMonth() !== nextMonth.getMonth()) {
-          nextMonthDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
+          nextMonthDueDate = new Date(
+            nextMonth.getFullYear(),
+            nextMonth.getMonth() + 1,
+            0
+          );
         }
         return nextMonthDueDate;
       } else {
         return potentialDueDate;
       }
-    }
+    };
 
     const today = startOfDay(new Date());
 
     const payments = cards
-      .filter(card => card.enableAlerts && card.dueDate)
-      .map(card => {
+      .filter((card) => card.enableAlerts && card.dueDate)
+      .map((card) => {
         const nextDueDate = getNextDateForDay(card.dueDate);
         const daysRemaining = differenceInDays(nextDueDate, today);
 
@@ -107,30 +120,29 @@ export default function DashboardPage() {
   useEffect(() => {
     if (userLoaded) {
       const hour = new Date().getHours();
-      let timeOfDay = 'Hello';
-      let emoji = '👋';
+      let timeOfDay = "Hello";
+      let emoji = "👋";
 
       if (hour < 12) {
-        timeOfDay = 'Good morning';
-        emoji = '☀️';
+        timeOfDay = "Good morning";
+        emoji = "☀️";
       } else if (hour < 18) {
-        timeOfDay = 'Good afternoon';
-        emoji = '👋';
+        timeOfDay = "Good afternoon";
+        emoji = "👋";
       } else {
-        timeOfDay = 'Good evening';
-        emoji = '🌙';
+        timeOfDay = "Good evening";
+        emoji = "🌙";
       }
 
-      const namePart = userName ? `, ${userName}` : '';
+      const namePart = userName ? `, ${userName}` : "";
       setGreeting(`${timeOfDay}${namePart}! ${emoji}`);
     }
   }, [userName, userLoaded]);
 
-
   const handleEdit = (card: CreditCard) => {
     // Only refresh once when opening the form
     if (!isFormOpen) {
-      refreshCustomLists();
+      refreshCustomLists;
     }
     setEditingCard(card);
     setIsFormOpen(true);
@@ -139,7 +151,7 @@ export default function DashboardPage() {
   const handleAddNew = () => {
     // Only refresh once when opening the form
     if (!isFormOpen) {
-      refreshCustomLists();
+      refreshCustomLists;
     }
     setEditingCard(undefined);
     setIsFormOpen(true);
